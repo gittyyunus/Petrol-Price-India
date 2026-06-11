@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 const { data: cities } = await supabase
   .from('cities')
   .select('*')
+  .not('city_slug', 'is', null)
   .order('city_name', { ascending: true });
 
 // Group by alphabet

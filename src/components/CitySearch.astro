@@ -44,8 +44,9 @@ const { data: cities } = await supabase.from('cities').select('city_name, city_s
       }
       
       const filtered = cities.filter(c => 
-        c.city_name.toLowerCase().includes(query) || 
-        c.state_name.toLowerCase().includes(query)
+        (c.city_name.toLowerCase().includes(query) || 
+        c.state_name.toLowerCase().includes(query)) &&
+        c.city_slug
       ).slice(0, 10);
       
       if (filtered.length > 0) {

@@ -81,40 +81,45 @@ def scrape_india_prices():
                     city_slug = slugify(city_name)
                     
                     # Look for price and change near the link
-                    # Typically they are in strong tags or following text
-                    # We'll search in the parent of the link
-                    parent = link.parent
-                    price_tag = parent.find('strong')
+                    # New structure: The price is in a div.txtC with a <b> tag
+                    # The change is also in that same div
+                    parent_container = link.find_parent('div', class_='SF')
                     price_val = None
-                    if price_tag:
-                        # strip ₹ and spaces
-                        price_text = price_tag.get_text(strip=True).replace('₹', '').replace(' ', '')
-                        try:
-                            price_val = float(price_text)
-                        except ValueError:
-                            pass
-                    
                     change_val = 0.0
-                    # Price change is usually in brackets e.g. (0.00)
-                    parent_text = parent.get_text()
-                    change_match = re.search(r'\(([-+]?\d*\.?\d+)\)', parent_text)
-                    if change_match:
-                        try:
-                            change_val = float(change_match.group(1))
-                        except ValueError:
-                            pass
                     
-                    results.append({
-                        "city_id": city_id,
-                        "city_name": city_name,
-                        "city_slug": city_slug,
-                        "state_name": state_name,
-                        "state_slug": state_slug,
-                        "petrol_price": price_val,
-                        "price_change": change_val,
-                        "date": date.today().isoformat(),
-                        "scraped_at": datetime.utcnow().isoformat()
-                    })
+                    if parent_container:
+                        price_div = parent_container.find('div', class_='txtC')
+                        if price_div:
+                            price_tag = price_div.find('b')
+                            if price_tag:
+                                # strip ₹ and spaces
+                                price_text = price_tag.get_text(strip=True).replace('₹', '').replace(' ', '')
+                                try:
+                                    price_val = float(price_text)
+                                except ValueError:
+                                    pass
+                            
+                            # Price change is usually in the text of the price_div, e.g. (0.00)
+                            div_text = price_div.get_text()
+                            change_match = re.search(r'\(([-+]?\d*\.?\d+)\)', div_text)
+                            if change_match:
+                                try:
+                                    change_val = float(change_match.group(1))
+                                except ValueError:
+                                    pass
+                    
+                    if price_val is not None:
+                        results.append({
+                            "city_id": city_id,
+                            "city_name": city_name,
+                            "city_slug": city_slug,
+                            "state_name": state_name,
+                            "state_slug": state_slug,
+                            "petrol_price": price_val,
+                            "price_change": change_val,
+                            "date": date.today().isoformat(),
+                            "scraped_at": datetime.now(datetime.UTC).isoformat()
+                        })
                 
                 sibling = sibling.find_next_sibling()
         

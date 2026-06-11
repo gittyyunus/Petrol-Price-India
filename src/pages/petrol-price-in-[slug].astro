@@ -1,0 +1,328 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import PriceCard from '../components/PriceCard.astro';
+import { supabase } from '../lib/supabase';
+import { formatDate, formatChange } from '../lib/utils';
+import { Share2, Info, ChevronRight, MapPin, ArrowUpDown } from '@lucide/astro';
+
+export async function getStaticPaths() {
+  const { data: cities } = await supabase.from('cities').select('*');
+  
+  if (!cities) return [];
+
+  // City paths
+  const cityPaths = cities
+    .filter(city => city.city_slug)
+    .map((city) => ({
+      params: { slug: city.city_slug },
+      props: { type: 'city', city },
+    }));
+
+  // State paths
+  const statesMap = new Map();
+  cities.forEach(c => {
+    if (c.state_slug && !statesMap.has(c.state_slug)) {
+      statesMap.set(c.state_slug, { name: c.state_name, slug: c.state_slug });
+    }
+  });
+
+  const statePaths = Array.from(statesMap.values()).map((state) => ({
+    params: { slug: state.slug },
+    props: { type: 'state', stateName: state.name, stateSlug: state.slug },
+  }));
+
+  // Combine and deduplicate slugs (if a city has the same slug as a state, city takes priority)
+  const allPaths = [...statePaths, ...cityPaths];
+  const uniquePathsMap = new Map();
+  allPaths.forEach(p => {
+    if (p.params.slug) {
+      uniquePathsMap.set(p.params.slug, p);
+    }
+  });
+  
+  return Array.from(uniquePathsMap.values());
+}
+
+const { slug } = Astro.params;
+const { type, city, stateName, stateSlug } = Astro.props;
+const today = new Date().toISOString().split('T')[0];
+
+let title = "";
+let description = "";
+let faqSchema = null;
+
+// --- City Logic ---
+let latestPrice, yesterdayPrice, priceHistory, nearbyPrices, nearbyCitiesList;
+if (type === 'city') {
+  const { data: priceData } = await supabase
+    .from('prices')
+    .select('*')
+    .eq('city_id', city.id)
+    .order('date', { ascending: false })
+    .limit(31);
+
+  latestPrice = priceData?.[0];
+  yesterdayPrice = priceData?.[1];
+  priceHistory = priceData || [];
+
+  nearbyCitiesList = await supabase
+    .from('cities')
+    .select('*')
+    .eq('state_name', city.state_name)
+    .neq('id', city.id)
+    .limit(6);
+
+  const { data: nbPrices } = await supabase
+    .from('prices')
+    .select('*')
+    .in('city_id', nearbyCitiesList.data?.map(c => c.id) || [])
+    .eq('date', today);
+  nearbyPrices = nbPrices;
+
+  title = `Petrol Price in ${city.city_name} Today (${formatDate(today)}) — ₹${latestPrice?.petrol_price || 'XX.XX'}/Litre`;
+  description = `Today's petrol price in ${city.city_name} is ₹${latestPrice?.petrol_price || 'XX.XX'} per litre (${(latestPrice?.price_change || 0) >= 0 ? '+' : ''}${latestPrice?.price_change || '0.00'} from yesterday). Check 30-day price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}.`;
+
+  faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `What is the petrol price in ${city.city_name} today?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The petrol price in ${city.city_name} today is ₹${latestPrice?.petrol_price || 'XX.XX'} per litre.`
+        }
+      }
+    ]
+  };
+}
+
+// --- State Logic ---
+let citiesInState, prices, avgPrice, maxPrice, minPrice;
+if (type === 'state') {
+  const { data: cis } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('state_name', stateName);
+  citiesInState = cis;
+
+  const cityIds = citiesInState?.map(c => c.id) || [];
+
+  const { data: prs } = await supabase
+    .from('prices')
+    .select('*')
+    .in('city_id', cityIds)
+    .eq('date', today)
+    .order('city_name', { ascending: true });
+  prices = prs;
+
+  avgPrice = prices?.length 
+    ? (prices.reduce((acc, curr) => acc + (curr.petrol_price || 0), 0) / prices.length).toFixed(2)
+    : 'N/A';
+
+  const sortedPrices = [...(prices || [])].sort((a, b) => (b.petrol_price || 0) - (a.petrol_price || 0));
+  maxPrice = sortedPrices[0];
+  minPrice = sortedPrices[sortedPrices.length - 1];
+
+  title = `Petrol Price in ${stateName} Today — Cities, Trends & Comparison`;
+  description = `Check petrol prices in all cities of ${stateName}. Find the cheapest city, state average, and daily price changes for ${stateName}. Updated for ${formatDate(today)}.`;
+}
+---
+
+<Base title={title} description={description}>
+  <Navbar />
+  
+  <main class="flex-1 bg-canvas-soft">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      
+      {/* City View */}
+      {type === 'city' && (
+        <>
+          <nav class="flex items-center gap-2 text-xs font-medium text-mute mb-8 overflow-x-auto whitespace-nowrap">
+            <a href="/" class="hover:text-ink">Home</a>
+            <ChevronRight class="w-3 h-3" />
+            <a href={`/petrol-price-in-${city.state_slug}`} class="hover:text-ink">{city.state_name}</a>
+            <ChevronRight class="w-3 h-3" />
+            <span class="text-ink">{city.city_name}</span>
+          </nav>
+          
+          <div class="grid lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+              <section>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                  <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-ink">
+                    Petrol Price in <span class="text-primary">{city.city_name}</span>
+                  </h1>
+                  <div class="flex gap-2">
+                    <button class="p-2 rounded-full border border-hairline bg-canvas hover:bg-canvas-soft-2 transition-colors"><Share2 class="w-4 h-4 text-body" /></button>
+                    <button class="flex items-center gap-2 px-4 py-2 rounded-full border border-hairline bg-canvas hover:bg-canvas-soft-2 transition-colors text-sm font-semibold"><Info class="w-4 h-4 text-body" /> Report Issue</button>
+                  </div>
+                </div>
+                <PriceCard 
+                  city={city.city_name}
+                  state={city.state_name}
+                  price={latestPrice?.petrol_price || 0}
+                  change={latestPrice?.price_change || 0}
+                  lastUpdated={`${formatDate(latestPrice?.scraped_at || today)}`}
+                  large={true}
+                  slug={city.city_slug}
+                />
+              </section>
+              
+              <section class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm">
+                <h2 class="text-xl font-bold text-ink mb-6">30-Day Price Trend</h2>
+                <div class="h-64 sm:h-80 w-full relative"><canvas id="priceChart"></canvas></div>
+              </section>
+              
+              <section class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm">
+                <div class="px-6 py-4 border-b border-hairline flex justify-between items-center bg-canvas">
+                  <h2 class="text-xl font-bold text-ink">Price History</h2>
+                  <span class="text-xs font-mono text-mute uppercase tracking-widest">Last 30 Days</span>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left">
+                    <thead class="bg-canvas-soft-2 text-[10px] font-mono uppercase tracking-widest text-mute">
+                      <tr><th class="px-6 py-3">Date</th><th class="px-6 py-3 text-right">Price (₹/L)</th><th class="px-6 py-3 text-right">Change</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-hairline">
+                      {priceHistory.map((item) => (
+                        <tr class="hover:bg-canvas-soft transition-colors">
+                          <td class="px-6 py-4 text-sm font-medium">{formatDate(item.date)}</td>
+                          <td class="px-6 py-4 text-sm font-mono font-bold text-right">₹{item.petrol_price?.toFixed(2) || 'N/A'}</td>
+                          <td class={`px-6 py-4 text-sm font-mono text-right ${item.price_change > 0 ? 'text-error' : item.price_change < 0 ? 'text-success' : 'text-mute'}`}>
+                            {formatChange(item.price_change)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+            
+            <div class="space-y-8">
+              <div class="bg-primary rounded-xl p-8 text-canvas shadow-lg">
+                <h3 class="text-lg font-semibold mb-6">Market Insight</h3>
+                <div class="space-y-6">
+                  <div><p class="text-xs text-canvas/60 uppercase tracking-widest mb-1">Yesterday's Price</p><p class="text-2xl font-bold">₹{yesterdayPrice?.petrol_price?.toFixed(2) || 'N/A'}</p></div>
+                  <div class="pt-6 border-t border-canvas/10">
+                    <p class="text-xs text-canvas/60 uppercase tracking-widest mb-1">30-Day High</p>
+                    <p class="text-2xl font-bold">₹{priceHistory.length > 0 ? Math.max(...priceHistory.map(p => p.petrol_price || 0)).toFixed(2) : 'N/A'}</p>
+                  </div>
+                  <div class="pt-6 border-t border-canvas/10">
+                    <p class="text-xs text-canvas/60 uppercase tracking-widest mb-1">30-Day Low</p>
+                    <p class="text-2xl font-bold">₹{priceHistory.length > 0 ? Math.min(...priceHistory.map(p => p.petrol_price || Infinity)).toFixed(2) : 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm">
+                <div class="flex items-center gap-2 mb-6"><MapPin class="w-4 h-4 text-mute" /><h2 class="text-sm font-bold uppercase tracking-wider text-mute">Nearby Cities</h2></div>
+                <div class="space-y-4">
+                  {nearbyPrices?.map(item => {
+                    const city = nearbyCitiesList.data?.find(c => c.id === item.city_id);
+                    if (!city) return null;
+                    return (
+                      <a href={`/petrol-price-in-${city.city_slug}`} class="flex justify-between items-center group">
+                        <span class="text-sm font-medium group-hover:text-primary transition-colors">{item.city_name}</span>
+                        <div class="text-right">
+                          <p class="text-sm font-mono font-bold">₹{item.petrol_price?.toFixed(2) || 'N/A'}</p>
+                          <p class={`text-[10px] font-mono ${item.price_change > 0 ? 'text-error' : item.price_change < 0 ? 'text-success' : 'text-mute'}`}>
+                            {item.price_change > 0 ? '▲' : item.price_change < 0 ? '▼' : ''} {Math.abs(item.price_change || 0).toFixed(2)}
+                          </p>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Calculator CTA */}
+              <div class="bg-canvas-soft-2 border border-hairline rounded-xl p-8 text-center">
+                <h3 class="font-bold text-lg mb-2">Save on Fuel?</h3>
+                <p class="text-sm text-body mb-6">Use our calculator to estimate your trip cost and find the cheapest fuel nearby.</p>
+                <a href="/calculator" class="inline-block w-full bg-primary text-canvas py-3 rounded-full text-sm font-semibold hover:bg-ink transition-colors">
+                  Try Fuel Calculator
+                </a>
+              </div>
+            </div>
+          </div>
+          <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          <script is:inline define:vars={{ priceHistory }}>
+            const ctx = document.getElementById('priceChart');
+            if (ctx) {
+              new Chart(ctx, {
+                type: 'line',
+                data: {
+                  labels: priceHistory.map(p => new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })).reverse(),
+                  datasets: [{
+                    label: 'Petrol Price (₹/L)',
+                    data: priceHistory.map(p => p.petrol_price).reverse(),
+                    borderColor: '#171717',
+                    backgroundColor: 'rgba(23, 23, 23, 0.05)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#171717',
+                  }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+              });
+            }
+          </script>
+        </>
+      )}
+
+      {/* State View */}
+      {type === 'state' && (
+        <>
+          <nav class="flex items-center gap-2 text-xs font-medium text-mute mb-8">
+            <a href="/" class="hover:text-ink">Home</a>
+            <ChevronRight class="w-3 h-3" />
+            <span class="text-ink">{stateName}</span>
+          </nav>
+          <header class="mb-12">
+            <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-ink mb-4">Petrol Price in <span class="text-primary">{stateName}</span></h1>
+            <p class="text-lg text-body max-w-2xl">Daily updated petrol prices for all major cities and districts in {stateName}.</p>
+          </header>
+          <div class="grid sm:grid-cols-3 gap-6 mb-12">
+            <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">State Average</p><p class="text-3xl font-bold text-ink">₹{avgPrice}<span class="text-sm font-normal text-mute ml-1">/L</span></p></div>
+            <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm border-l-4 border-l-error"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">Highest Price</p><p class="text-3xl font-bold text-ink">₹{maxPrice?.petrol_price?.toFixed(2) || 'N/A'}</p><p class="text-xs text-body mt-1">in {maxPrice?.city_name}</p></div>
+            <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm border-l-4 border-l-success"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">Lowest Price</p><p class="text-3xl font-bold text-ink">₹{minPrice?.petrol_price?.toFixed(2) || 'N/A'}</p><p class="text-xs text-body mt-1">in {minPrice?.city_name}</p></div>
+          </div>
+          <section class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm">
+            <div class="px-6 py-4 border-b border-hairline flex justify-between items-center bg-canvas">
+              <h2 class="text-xl font-bold text-ink">Cities in {stateName}</h2>
+              <span class="text-xs font-mono text-mute uppercase tracking-widest">{prices?.length || 0} Cities</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-canvas-soft-2 text-[10px] font-mono uppercase tracking-widest text-mute">
+                  <tr><th class="px-6 py-4">City</th><th class="px-6 py-4 text-right">Price (₹/L)</th><th class="px-6 py-4 text-right">Change</th><th class="px-6 py-4"></th></tr>
+                </thead>
+                <tbody class="divide-y divide-hairline">
+                  {prices?.map((item) => (
+                    <tr class="hover:bg-canvas-soft transition-colors group">
+                      <td class="px-6 py-4"><p class="text-sm font-semibold text-ink">{item.city_name}</p></td>
+                      <td class="px-6 py-4 text-sm font-mono font-bold text-right">₹{item.petrol_price?.toFixed(2) || 'N/A'}</td>
+                      <td class={`px-6 py-4 text-sm font-mono text-right ${item.price_change > 0 ? 'text-error' : item.price_change < 0 ? 'text-success' : 'text-mute'}`}>
+                        {item.price_change > 0 ? '▲' : item.price_change < 0 ? '▼' : '—'} {Math.abs(item.price_change || 0).toFixed(2)}
+                      </td>
+                      <td class="px-6 py-4 text-right"><a href={`/petrol-price-in-${citiesInState?.find(c => c.id === item.city_id)?.city_slug}`} class="inline-flex items-center gap-1 text-xs font-semibold text-mute group-hover:text-primary transition-colors">View Details <ChevronRight class="w-3 h-3" /></a></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
+    </div>
+  </main>
+  
+  <Footer />
+  {faqSchema && <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />}
+</Base>
