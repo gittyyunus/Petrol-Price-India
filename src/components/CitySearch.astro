@@ -1,0 +1,75 @@
+---
+import { supabase } from '../lib/supabase';
+
+// Fetch all cities for the search index
+const { data: cities } = await supabase.from('cities').select('city_name, city_slug, state_name');
+---
+
+<div class="relative w-full" id="city-search-container">
+  <div class="relative group">
+    <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-mute group-focus-within:text-ink transition-colors"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    </div>
+    <input 
+      type="text" 
+      id="city-search-input"
+      placeholder="Search your city (e.g. Mumbai, Delhi...)" 
+      class="w-full h-14 pl-12 pr-4 rounded-xl border border-hairline bg-canvas shadow-lg shadow-black/5 outline-none focus:ring-2 focus:ring-primary/5 focus:border-primary transition-all text-lg"
+      autocomplete="off"
+    />
+  </div>
+  
+  <div 
+    id="search-results" 
+    class="absolute top-full left-0 right-0 mt-2 bg-canvas border border-hairline rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto hidden"
+  >
+    <div id="results-list" class="divide-y divide-hairline">
+      {/* Results populated by JS */}
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ cities }}>
+  const input = document.getElementById('city-search-input');
+  const resultsContainer = document.getElementById('search-results');
+  const resultsList = document.getElementById('results-list');
+  
+  if (input && resultsContainer && resultsList) {
+    input.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      
+      if (query.length < 2) {
+        resultsContainer.classList.add('hidden');
+        return;
+      }
+      
+      const filtered = cities.filter(c => 
+        c.city_name.toLowerCase().includes(query) || 
+        c.state_name.toLowerCase().includes(query)
+      ).slice(0, 10);
+      
+      if (filtered.length > 0) {
+        resultsList.innerHTML = filtered.map(c => `
+          <a href="/petrol-price-in-${c.city_slug}" class="flex justify-between items-center px-6 py-4 hover:bg-canvas-soft-2 transition-colors group">
+            <div>
+              <p class="font-semibold text-ink group-hover:text-primary">${c.city_name}</p>
+              <p class="text-xs text-mute">${c.state_name}</p>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-mute group-hover:text-primary transition-transform group-hover:translate-x-1"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+        `).join('');
+        resultsContainer.classList.remove('hidden');
+      } else {
+        resultsList.innerHTML = '<div class="px-6 py-8 text-center text-mute text-sm">No cities found. Try another search.</div>';
+        resultsContainer.classList.remove('hidden');
+      }
+    });
+    
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
+        resultsContainer.classList.add('hidden');
+      }
+    });
+  }
+</script>

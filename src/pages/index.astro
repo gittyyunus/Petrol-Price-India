@@ -1,11 +1,262 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import PriceCard from '../components/PriceCard.astro';
+import CitySearch from '../components/CitySearch.astro';
+import { Search, MapPin, ArrowRight, Zap, TrendingUp, TrendingDown } from '@lucide/astro';
+import { supabase } from '../lib/supabase';
+import { formatPrice } from '../lib/utils';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// Get today's date in ISO format
+const today = new Date().toISOString().split('T')[0];
+
+// Fetch prices for major cities
+const majorCityNames = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad", "Kolkata", "Ahmedabad", "Pune"];
+const { data: majorCitiesData } = await supabase
+  .from('prices')
+  .select('*')
+  .in('city_name', majorCityNames)
+  .eq('date', today);
+
+// Fetch top movers
+const { data: topMoversUp } = await supabase
+  .from('prices')
+  .select('*')
+  .eq('date', today)
+  .gt('price_change', 0)
+  .order('price_change', { ascending: false })
+  .limit(3);
+
+const { data: topMoversDown } = await supabase
+  .from('prices')
+  .select('*')
+  .eq('date', today)
+  .lt('price_change', 0)
+  .order('price_change', { ascending: true })
+  .limit(3);
+
+// Fetch total city count for the search placeholder
+const { count: cityCount } = await supabase
+  .from('cities')
+  .select('*', { count: 'exact', head: true });
+
+// Get a default city (Mumbai) for the hero card
+const mumbaiPrice = majorCitiesData?.find(c => c.city_name === "Mumbai") || majorCitiesData?.[0];
+
+const lastUpdatedTime = mumbaiPrice ? new Date(mumbaiPrice.scraped_at).toLocaleTimeString('en-IN', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: true,
+  timeZone: 'Asia/Kolkata'
+}) : "6:30 AM";
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<Base>
+  <Navbar />
+  
+  <main class="flex-1">
+    {/* Hero Section */}
+    <section class="relative bg-canvas pt-20 pb-32 overflow-hidden border-b border-hairline">
+      <div class="absolute inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-blue-50/50 via-magenta-50/20 to-transparent blur-3xl opacity-50"></div>
+      </div>
+      
+      <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-canvas-soft border border-hairline mb-8 animate-fade-in">
+          <Zap class="w-3.5 h-3.5 text-warning fill-warning" />
+          <span class="text-xs font-mono font-medium text-body uppercase tracking-wider">Prices updated at {lastUpdatedTime} IST</span>
+        </div>
+        
+        <h1 class="text-5xl sm:text-7xl font-bold tracking-tight text-ink mb-6 max-w-4xl mx-auto">
+          Petrol Price in India. <br class="hidden sm:block" />
+          <span class="text-mute">Tracked daily.</span>
+        </h1>
+        
+        <p class="text-lg sm:text-xl text-body max-w-2xl mx-auto mb-12 leading-relaxed">
+          Get real-time petrol prices for {cityCount || '700+'} cities across India. Minimal, fast, and data-driven insights.
+        </p>
+        
+        <div class="max-w-2xl mx-auto mb-16">
+          <CitySearch />
+          
+          <div class="mt-4 flex flex-wrap justify-center gap-2">
+            <span class="text-xs text-mute font-medium">Quick links:</span>
+            {["Mumbai", "Delhi", "Bangalore", "Chennai"].map(city => (
+              <a href={`/petrol-price-in-${city.toLowerCase()}`} class="text-xs text-body hover:text-ink hover:underline">{city}</a>
+            ))}
+          </div>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8 text-left max-w-5xl mx-auto">
+          <div class="md:col-span-2">
+            {mumbaiPrice && (
+              <PriceCard 
+                city={mumbaiPrice.city_name} 
+                state={mumbaiPrice.state_name} 
+                price={mumbaiPrice.petrol_price} 
+                change={mumbaiPrice.price_change} 
+                lastUpdated={`${lastUpdatedTime} Today`} 
+                large={true}
+              />
+            )}
+          </div>
+          <div class="space-y-4">
+            <div class="bg-canvas border border-hairline rounded-lg p-6 shadow-sm">
+              <div class="flex items-center gap-2 mb-4">
+                <MapPin class="w-4 h-4 text-mute" />
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-mute">Nearby Mumbai</h3>
+              </div>
+              <ul class="space-y-4">
+                {majorCitiesData?.filter(c => c.city_name !== "Mumbai").slice(0, 3).map(city => (
+                  <li class="flex justify-between items-center border-b border-hairline pb-2 last:border-0 last:pb-0">
+                    <a href={`/petrol-price-in-${city.city_name.toLowerCase()}`} class="text-sm font-medium hover:text-primary transition-colors">{city.city_name}</a>
+                    <span class="text-sm font-mono font-bold">₹{city.petrol_price?.toFixed(2) || 'N/A'}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <a href="/calculator" class="block bg-primary p-6 rounded-lg text-canvas group">
+              <div class="flex justify-between items-center mb-2">
+                <h3 class="font-semibold">Fuel Calculator</h3>
+                <ArrowRight class="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              </div>
+              <p class="text-sm text-canvas/80 leading-snug">Estimate your trip cost based on current prices.</p>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    {/* Top Movers */}
+    <section class="py-24 bg-canvas-soft border-b border-hairline">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row justify-between items-baseline gap-4 mb-12">
+          <div>
+            <h2 class="text-3xl font-bold tracking-tight text-ink mb-2">Daily Top Movers</h2>
+            <p class="text-body">Biggest price changes in India today.</p>
+          </div>
+          <div class="flex gap-2">
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-canvas border border-hairline">
+              <div class="w-2 h-2 rounded-full bg-error"></div>
+              <span class="text-xs font-medium text-body">Increases</span>
+            </div>
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-canvas border border-hairline">
+              <div class="w-2 h-2 rounded-full bg-success"></div>
+              <span class="text-xs font-medium text-body">Decreases</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-8">
+          <div class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm">
+            <div class="px-6 py-4 bg-error/5 border-b border-hairline flex items-center justify-between">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-error flex items-center gap-2">
+                <TrendingUp class="w-4 h-4" /> Highest Increase
+              </h3>
+            </div>
+            <div class="divide-y divide-hairline">
+              {topMoversUp?.map(item => (
+                <a href={`/petrol-price-in-${item.city_name.toLowerCase().replace(/ /g, '-')}`} class="px-6 py-4 flex justify-between items-center hover:bg-canvas-soft-2 transition-colors">
+                  <div>
+                    <p class="font-semibold text-ink">{item.city_name}</p>
+                    <p class="text-xs text-mute font-mono">{item.state_name}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-lg font-bold text-error">▲ +{item.price_change?.toFixed(2) || '0.00'}</p>
+                    <p class="text-xs text-mute font-mono">₹{item.petrol_price?.toFixed(2) || 'N/A'}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+          
+          <div class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm">
+            <div class="px-6 py-4 bg-success/5 border-b border-hairline flex items-center justify-between">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-success flex items-center gap-2">
+                <TrendingDown class="w-4 h-4" /> Biggest Drop
+              </h3>
+            </div>
+            <div class="divide-y divide-hairline">
+              {topMoversDown?.map(item => (
+                <a href={`/petrol-price-in-${item.city_name.toLowerCase().replace(/ /g, '-')}`} class="px-6 py-4 flex justify-between items-center hover:bg-canvas-soft-2 transition-colors">
+                  <div>
+                    <p class="font-semibold text-ink">{item.city_name}</p>
+                    <p class="text-xs text-mute font-mono">{item.state_name}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-lg font-bold text-success">▼ {item.price_change?.toFixed(2) || '0.00'}</p>
+                    <p class="text-xs text-mute font-mono">₹{item.petrol_price?.toFixed(2) || 'N/A'}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    {/* Major Cities Grid */}
+    <section class="py-24 bg-canvas">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-end mb-12">
+          <div>
+            <h2 class="text-3xl font-bold tracking-tight text-ink mb-2">Major Cities</h2>
+            <p class="text-body">Petrol prices in major Indian metropolitans.</p>
+          </div>
+          <a href="/all-cities" class="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+            View all cities <ArrowRight class="w-4 h-4" />
+          </a>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {majorCitiesData?.map(city => (
+            <PriceCard 
+              city={city.city_name} 
+              state={city.state_name} 
+              price={city.petrol_price} 
+              change={city.price_change} 
+              lastUpdated={`${lastUpdatedTime} Today`} 
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <Footer />
+</Base>
+
+<script>
+  // Simple geolocation detection
+  async function detectCity() {
+    try {
+      if ("geolocation" in navigator) {
+        // We could use an IP-based geolocation for better UX if the user denies permission
+        // but for now let's just use the browser API if available.
+        // Actually, many users deny geolocation. IP-based is better.
+        const res = await fetch('https://ipapi.co/json/');
+        const data = await res.json();
+        if (data.city) {
+          console.log("Detected city:", data.city);
+          // Update hero card if city found in our list
+          // This would require a client-side fetch or just highlighting the search
+        }
+      }
+    } catch (e) {
+      console.error("Geo detection failed", e);
+    }
+  }
+  
+  detectCity();
+</script>
+
+<style>
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out forwards;
+  }
+</style>

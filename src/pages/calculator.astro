@@ -1,0 +1,147 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { supabase } from '../lib/supabase';
+import { Calculator as CalcIcon, Fuel, Navigation, Info } from '@lucide/astro';
+
+const { data: cities } = await supabase.from('cities').select('id, city_name, city_slug');
+const today = new Date().toISOString().split('T')[0];
+const { data: prices } = await supabase.from('prices').select('*').eq('date', today);
+
+const title = "Fuel Cost Calculator — Estimate Your Trip Expenses";
+const description = "Calculate your petrol expenses for any trip in India. Input distance, mileage, and select your city for accurate, real-time fuel cost estimation.";
+---
+
+<Base title={title} description={description}>
+  <Navbar />
+  
+  <main class="flex-1 bg-canvas-soft">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
+      <header class="text-center mb-16">
+        <div class="inline-flex items-center justify-center p-3 bg-primary/5 rounded-2xl mb-6">
+          <CalcIcon class="w-8 h-8 text-primary" />
+        </div>
+        <h1 class="text-4xl font-bold tracking-tight text-ink mb-4">Fuel Cost Calculator</h1>
+        <p class="text-lg text-body max-w-2xl mx-auto">
+          Planning a road trip? Estimate your fuel expenses based on current petrol prices in your city.
+        </p>
+      </header>
+      
+      <div class="grid md:grid-cols-2 gap-12">
+        <div class="bg-canvas border border-hairline rounded-2xl p-8 shadow-sm h-fit">
+          <form id="calc-form" class="space-y-6">
+            <div>
+              <label class="block text-sm font-semibold text-ink mb-2 flex items-center gap-2">
+                <Navigation class="w-4 h-4 text-mute" /> Distance (km)
+              </label>
+              <input 
+                type="number" 
+                id="distance" 
+                placeholder="e.g. 500" 
+                class="w-full h-12 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/5 focus:border-primary outline-none transition-all"
+                required
+              />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold text-ink mb-2 flex items-center gap-2">
+                <Fuel class="w-4 h-4 text-mute" /> Mileage (km/litre)
+              </label>
+              <input 
+                type="number" 
+                id="mileage" 
+                placeholder="e.g. 15" 
+                class="w-full h-12 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/5 focus:border-primary outline-none transition-all"
+                required
+              />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold text-ink mb-2">Select City</label>
+              <select 
+                id="city-select" 
+                class="w-full h-12 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/5 focus:border-primary outline-none transition-all appearance-none cursor-pointer"
+              >
+                {prices?.map(p => (
+                  <option value={p.petrol_price} selected={p.city_name === "Mumbai"}>
+                    {p.city_name} (₹{p.petrol_price?.toFixed(2)})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </form>
+        </div>
+        
+        <div class="flex flex-col justify-center">
+          <div class="bg-primary rounded-2xl p-10 text-canvas shadow-xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-10">
+              <CalcIcon class="w-32 h-32" />
+            </div>
+            
+            <h3 class="text-sm font-mono uppercase tracking-[0.2em] text-canvas/60 mb-8">Estimated Cost</h3>
+            <div class="flex items-baseline gap-2 mb-8">
+              <span class="text-6xl font-bold tracking-tighter" id="result-cost">₹0.00</span>
+            </div>
+            
+            <div class="space-y-4 pt-8 border-t border-canvas/10">
+              <div class="flex justify-between text-sm">
+                <span class="text-canvas/60">Fuel Required</span>
+                <span class="font-mono font-bold" id="result-fuel">0.00 Litres</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-canvas/60">Petrol Price</span>
+                <span class="font-mono font-bold" id="result-price">₹0.00/L</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-8 flex items-start gap-3 p-4 bg-canvas-soft border border-hairline rounded-xl">
+            <Info class="w-5 h-5 text-mute shrink-0 mt-0.5" />
+            <p class="text-xs text-body leading-relaxed">
+              Estimation is based on current petrol prices in the selected city. Actual mileage may vary depending on driving conditions, traffic, and vehicle maintenance.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <Footer />
+</Base>
+
+<script>
+  const distanceInput = document.getElementById('distance') as HTMLInputElement;
+  const mileageInput = document.getElementById('mileage') as HTMLInputElement;
+  const citySelect = document.getElementById('city-select') as HTMLSelectElement;
+  
+  const resultCost = document.getElementById('result-cost');
+  const resultFuel = document.getElementById('result-fuel');
+  const resultPrice = document.getElementById('result-price');
+  
+  function calculate() {
+    const distance = parseFloat(distanceInput.value) || 0;
+    const mileage = parseFloat(mileageInput.value) || 0;
+    const price = parseFloat(citySelect.value) || 0;
+    
+    if (distance > 0 && mileage > 0 && price > 0) {
+      const fuelRequired = distance / mileage;
+      const totalCost = fuelRequired * price;
+      
+      if (resultCost) resultCost.textContent = `₹${totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      if (resultFuel) resultFuel.textContent = `${fuelRequired.toFixed(2)} Litres`;
+      if (resultPrice) resultPrice.textContent = `₹${price.toFixed(2)}/L`;
+    } else {
+      if (resultCost) resultCost.textContent = '₹0.00';
+      if (resultFuel) resultFuel.textContent = '0.00 Litres';
+      if (resultPrice) resultPrice.textContent = '₹0.00/L';
+    }
+  }
+  
+  [distanceInput, mileageInput, citySelect].forEach(el => {
+    el?.addEventListener('input', calculate);
+  });
+  
+  // Initial calculation
+  calculate();
+</script>

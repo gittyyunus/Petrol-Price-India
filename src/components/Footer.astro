@@ -1,0 +1,58 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-auto border-t border-hairline bg-canvas py-12 px-4 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-7xl">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <div class="col-span-2 md:col-span-1">
+        <a href="/" class="flex items-center gap-2 mb-4">
+          <div class="h-6 w-6 bg-primary rounded-sm flex items-center justify-center text-canvas font-bold text-sm">P</div>
+          <span class="text-lg font-semibold tracking-tight">Petrol Price India</span>
+        </a>
+        <p class="text-sm text-body leading-relaxed max-w-xs">
+          Real-time petrol price tracking across 700+ cities in India. Data-driven insights for smarter fuel decisions.
+        </p>
+      </div>
+      
+      <div>
+        <h3 class="font-mono text-[10px] uppercase tracking-widest text-mute mb-4">Features</h3>
+        <ul class="space-y-2">
+          <li><a href="/compare" class="text-sm text-body hover:text-ink transition-colors">Compare Cities</a></li>
+          <li><a href="/calculator" class="text-sm text-body hover:text-ink transition-colors">Fuel Calculator</a></li>
+          <li><a href="/alerts" class="text-sm text-body hover:text-ink transition-colors">Price Alerts</a></li>
+          <li><a href="/api-docs" class="text-sm text-body hover:text-ink transition-colors">Developer API</a></li>
+        </ul>
+      </div>
+      
+      <div>
+        <h3 class="font-mono text-[10px] uppercase tracking-widest text-mute mb-4">Top States</h3>
+        <ul class="space-y-2">
+          <li><a href="/petrol-price-in-maharashtra" class="text-sm text-body hover:text-ink transition-colors">Maharashtra</a></li>
+          <li><a href="/petrol-price-in-delhi" class="text-sm text-body hover:text-ink transition-colors">Delhi</a></li>
+          <li><a href="/petrol-price-in-karnataka" class="text-sm text-body hover:text-ink transition-colors">Karnataka</a></li>
+          <li><a href="/petrol-price-in-tamil-nadu" class="text-sm text-body hover:text-ink transition-colors">Tamil Nadu</a></li>
+        </ul>
+      </div>
+      
+      <div>
+        <h3 class="font-mono text-[10px] uppercase tracking-widest text-mute mb-4">Resources</h3>
+        <ul class="space-y-2">
+          <li><a href="/about" class="text-sm text-body hover:text-ink transition-colors">About Us</a></li>
+          <li><a href="/contact" class="text-sm text-body hover:text-ink transition-colors">Contact</a></li>
+          <li><a href="/privacy" class="text-sm text-body hover:text-ink transition-colors">Privacy Policy</a></li>
+          <li><a href="/terms" class="text-sm text-body hover:text-ink transition-colors">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="pt-8 border-t border-hairline flex flex-col md:flex-row justify-between items-center gap-4">
+      <p class="text-xs text-mute">
+        &copy; {year} PetrolPriceIndia.com. All rights reserved.
+      </p>
+      <p class="text-xs text-mute">
+        Data sourced from reliable public records. Prices are subject to change.
+      </p>
+    </div>
+  </div>
+</footer>

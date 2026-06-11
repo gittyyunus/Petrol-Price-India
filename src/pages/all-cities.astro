@@ -1,0 +1,71 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { supabase } from '../lib/supabase';
+
+const { data: cities } = await supabase
+  .from('cities')
+  .select('*')
+  .order('city_name', { ascending: true });
+
+// Group by alphabet
+const groupedCities = cities?.reduce((acc, city) => {
+  const char = city.city_name[0].toUpperCase();
+  if (!acc[char]) acc[char] = [];
+  acc[char].push(city);
+  return acc;
+}, {} as Record<string, typeof cities>);
+
+const alphabet = Object.keys(groupedCities || {}).sort();
+
+const title = "All Cities — Petrol Price India Directory";
+const description = "Browse petrol prices for all cities in India. Alphabetical directory of over 700 cities with real-time price tracking.";
+---
+
+<Base title={title} description={description}>
+  <Navbar />
+  
+  <main class="flex-1 bg-canvas-soft">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+      <header class="mb-16">
+        <h1 class="text-4xl font-bold tracking-tight text-ink mb-4">Cities Directory</h1>
+        <p class="text-lg text-body max-w-2xl">
+          Complete alphabetical list of all cities and districts where we track petrol prices daily.
+        </p>
+      </header>
+      
+      <div class="flex flex-wrap gap-2 mb-12">
+        {alphabet.map(char => (
+          <a href={`#section-${char}`} class="w-10 h-10 flex items-center justify-center bg-canvas border border-hairline rounded-lg text-sm font-bold text-body hover:border-primary hover:text-primary transition-all">
+            {char}
+          </a>
+        ))}
+      </div>
+      
+      <div class="space-y-16">
+        {alphabet.map(char => (
+          <section id={`section-${char}`}>
+            <h2 class="text-2xl font-bold text-ink mb-8 pb-4 border-b-2 border-primary/10 flex items-center gap-4">
+              <span class="w-10 h-10 bg-primary text-canvas rounded-lg flex items-center justify-center text-xl">{char}</span>
+              Cities starting with {char}
+            </h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-4">
+              {groupedCities![char].map(city => (
+                <a 
+                  href={`/petrol-price-in-${city.city_slug}`} 
+                  class="text-sm text-body hover:text-primary transition-colors truncate"
+                  title={`Petrol price in ${city.city_name}, ${city.state_name}`}
+                >
+                  {city.city_name}
+                </a>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  </main>
+  
+  <Footer />
+</Base>

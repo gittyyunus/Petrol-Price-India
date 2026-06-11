@@ -1,0 +1,74 @@
+---
+import '@fontsource/geist/400.css';
+import '@fontsource/geist/500.css';
+import '@fontsource/geist/600.css';
+import '@fontsource/geist-mono/400.css';
+import '../styles/global.css';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const { 
+	title = "Petrol Price India — Today's Petrol Price in All Cities",
+	description = "Track daily petrol prices in India. Real-time updates, price history charts, and fuel cost calculator for all major cities and states."
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<!-- <meta property="og:image" content="/og-image.png" /> -->
+
+		<!-- Twitter -->
+		<meta property="twitter:card" content="summary_large_image" />
+		<meta property="twitter:title" content={title} />
+		<meta property="twitter:description" content={description} />
+		
+		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site || 'https://petrolpriceindia.com')} />
+	</head>
+	<body class="bg-canvas-soft text-ink font-sans selection:bg-ink selection:text-canvas overflow-x-hidden min-h-screen flex flex-col">
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--color-primary: #171717;
+		--color-ink: #171717;
+		--color-body: #4d4d4d;
+		--color-mute: #888888;
+		--color-hairline: #ebebeb;
+		--color-canvas: #ffffff;
+		--color-canvas-soft: #fafafa;
+		--color-success: #22c55e;
+		--color-error: #ef4444;
+	}
+
+	html {
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		scroll-behavior: smooth;
+	}
+
+	body {
+		text-rendering: optimizeLegibility;
+	}
+
+	h1, h2, h3, h4, h5, h6 {
+		letter-spacing: -0.02em;
+	}
+</style>

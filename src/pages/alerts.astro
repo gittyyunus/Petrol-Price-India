@@ -1,0 +1,93 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { Bell, Mail, Phone, CheckCircle2 } from '@lucide/astro';
+
+const title = "Petrol Price Alerts — Get Notified on Price Drops";
+const description = "Never miss a petrol price drop. Sign up for free alerts for your city and get notified via email or WhatsApp when prices change.";
+---
+
+<Base title={title} description={description}>
+  <Navbar />
+  
+  <main class="flex-1 bg-canvas-soft">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
+      <div class="bg-canvas border border-hairline rounded-3xl overflow-hidden shadow-xl grid md:grid-cols-2">
+        <div class="p-12 bg-primary text-canvas flex flex-col justify-center">
+          <div class="inline-flex items-center justify-center p-3 bg-canvas/10 rounded-2xl mb-8 w-fit">
+            <Bell class="w-8 h-8 text-canvas" />
+          </div>
+          <h1 class="text-4xl font-bold tracking-tight mb-6">Stay ahead of price changes.</h1>
+          <p class="text-lg text-canvas/80 leading-relaxed mb-8">
+            Get instant notifications when petrol prices in your city hit your target price or drop significantly.
+          </p>
+          
+          <ul class="space-y-4">
+            <li class="flex items-center gap-3">
+              <CheckCircle2 class="w-5 h-5 text-success" />
+              <span class="text-sm font-medium">Daily price updates</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <CheckCircle2 class="w-5 h-5 text-success" />
+              <span class="text-sm font-medium">Custom target price alerts</span>
+            </li>
+            <li class="flex items-center gap-3">
+              <CheckCircle2 class="w-5 h-5 text-success" />
+              <span class="text-sm font-medium">Email & WhatsApp support</span>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="p-12">
+          <form class="space-y-6">
+            <div>
+              <label class="block text-sm font-semibold text-ink mb-2">City</label>
+              <input 
+                type="text" 
+                placeholder="Search city..." 
+                class="w-full h-12 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/5 focus:border-primary outline-none transition-all"
+              />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold text-ink mb-2">Notification Method</label>
+              <div class="grid grid-cols-2 gap-4">
+                <label class="flex items-center gap-3 p-4 rounded-xl border border-hairline cursor-pointer hover:bg-canvas-soft-2 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                  <input type="radio" name="method" value="email" class="hidden" checked />
+                  <Mail class="w-5 h-5 text-mute" />
+                  <span class="text-sm font-semibold">Email</span>
+                </label>
+                <label class="flex items-center gap-3 p-4 rounded-xl border border-hairline cursor-pointer hover:bg-canvas-soft-2 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                  <input type="radio" name="method" value="whatsapp" class="hidden" />
+                  <Phone class="w-5 h-5 text-mute" />
+                  <span class="text-sm font-semibold">WhatsApp</span>
+                </label>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold text-ink mb-2">Email Address / Phone</label>
+              <input 
+                type="text" 
+                placeholder="you@example.com" 
+                class="w-full h-12 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/5 focus:border-primary outline-none transition-all"
+              />
+            </div>
+            
+            <button class="w-full bg-primary text-canvas py-4 rounded-full text-sm font-bold hover:bg-ink transition-all shadow-lg shadow-black/10">
+              Enable Price Alerts
+            </button>
+            
+            <p class="text-[10px] text-center text-mute uppercase tracking-widest leading-relaxed">
+              No spam. Unsubscribe anytime with one click. <br />
+              Powered by Petrol Price India.
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <Footer />
+</Base>
