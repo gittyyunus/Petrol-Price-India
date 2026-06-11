@@ -252,14 +252,19 @@ if (type === 'state') {
           <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
           <script is:inline define:vars={{ priceHistory }}>
             const ctx = document.getElementById('priceChart');
-            if (ctx) {
+            if (ctx && priceHistory && priceHistory.length > 0) {
+              // Filter out any entries without a valid price
+              const validData = [...priceHistory]
+                .filter(p => p.petrol_price !== null && p.petrol_price !== undefined)
+                .reverse();
+
               new Chart(ctx, {
                 type: 'line',
                 data: {
-                  labels: priceHistory.map(p => new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })).reverse(),
+                  labels: validData.map(p => new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })),
                   datasets: [{
                     label: 'Petrol Price (₹/L)',
-                    data: priceHistory.map(p => p.petrol_price).reverse(),
+                    data: validData.map(p => p.petrol_price),
                     borderColor: '#171717',
                     backgroundColor: 'rgba(23, 23, 23, 0.05)',
                     borderWidth: 2,
@@ -267,9 +272,61 @@ if (type === 'state') {
                     fill: true,
                     pointRadius: 3,
                     pointBackgroundColor: '#171717',
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: '#171717',
+                    pointHoverBorderColor: '#fff',
+                    pointHoverBorderWidth: 2,
                   }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: { 
+                  responsive: true, 
+                  maintainAspectRatio: false, 
+                  interaction: {
+                    mode: 'index',
+                    intersect: false,
+                  },
+                  plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                      backgroundColor: '#171717',
+                      titleColor: '#fff',
+                      bodyColor: '#fff',
+                      padding: 12,
+                      cornerRadius: 8,
+                      callbacks: {
+                        label: function(context) {
+                          return ` Petrol Price: ₹${context.parsed.y.toFixed(2)}`;
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: false,
+                      grace: '10%',
+                      ticks: {
+                        font: { size: 11 },
+                        callback: function(value) {
+                          return '₹' + value.toFixed(1);
+                        }
+                      },
+                      grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                      }
+                    },
+                    x: {
+                      ticks: {
+                        font: { size: 11 },
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 7
+                      },
+                      grid: {
+                        display: false
+                      }
+                    }
+                  }
+                }
               });
             }
           </script>
