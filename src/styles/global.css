@@ -31,4 +31,13 @@
   body {
     @apply bg-canvas-soft text-ink font-sans;
   }
+
+  /* Tactile button feedback */
+  button, a {
+    @apply transition-transform transition-colors duration-150;
+  }
+
+  button:active, a:active {
+    @apply scale-95;
+  }
 }

@@ -8,6 +8,10 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://petrolpriceindia.com',
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'hover'
+  },
   vite: {
     plugins: [tailwindcss()]
   },
