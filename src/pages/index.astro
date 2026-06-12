@@ -65,16 +65,16 @@ const lastUpdatedTime = mumbaiPrice ? new Date(mumbaiPrice.scraped_at).toLocaleT
       <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-canvas-soft border border-hairline mb-8 animate-fade-in">
           <Zap class="w-3.5 h-3.5 text-warning fill-warning" />
-          <span class="text-xs font-mono font-medium text-body uppercase tracking-wider">Prices updated at {lastUpdatedTime} IST</span>
+          <span class="text-xs font-mono font-medium text-body uppercase tracking-wider">Prices updated daily</span>
         </div>
         
         <h1 class="text-5xl sm:text-7xl font-bold tracking-tight text-ink mb-6 max-w-4xl mx-auto">
-          Petrol Price in India. <br class="hidden sm:block" />
+          Fuel Prices in India. <br class="hidden sm:block" />
           <span class="text-mute">Tracked daily.</span>
         </h1>
-        
+
         <p class="text-lg sm:text-xl text-body max-w-2xl mx-auto mb-12 leading-relaxed">
-          Get real-time petrol prices for {cityCount || '700+'} cities across India. Minimal, fast, and data-driven insights.
+          Get real-time fuel prices for {cityCount || '700+'} cities across India. Minimal, fast, and data-driven insights.
         </p>
         
         <div class="mb-16">
@@ -203,7 +203,7 @@ const lastUpdatedTime = mumbaiPrice ? new Date(mumbaiPrice.scraped_at).toLocaleT
         <div class="flex justify-between items-end mb-12">
           <div>
             <h2 class="text-3xl font-bold tracking-tight text-ink mb-2">Major Cities</h2>
-            <p class="text-body">Petrol prices in major Indian metropolitans.</p>
+            <p class="text-body">Fuel prices in major Indian metropolitans.</p>
           </div>
           <a href="/all-cities" class="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
             View all cities <ArrowRight class="w-4 h-4" />
