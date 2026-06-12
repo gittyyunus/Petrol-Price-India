@@ -84,7 +84,11 @@ def scrape_fuel_prices(fuel_type):
                         continue
                     
                     city_name = link.get_text(strip=True)
+                    if not city_name:
+                        continue
                     city_slug = slugify(city_name)
+                    if not city_slug:
+                        continue
                     
                     parent_container = link.find_parent('div', class_='SF')
                     price_val = None
