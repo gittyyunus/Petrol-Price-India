@@ -114,10 +114,32 @@ const description = "Compare petrol prices across different cities in India. Sel
     const cards = grid.querySelectorAll('.city-card');
     cards.forEach(c => c.remove());
     
+    // Calculate extremes if we have 4 cities
+    let minPrice = Infinity;
+    let maxPrice = -Infinity;
+    const isFull = selectedCities.length === MAX_CITIES;
+    
+    if (isFull) {
+      selectedCities.forEach(city => {
+        const p = latestPrices.find(lp => lp.city_id === city.id)?.petrol_price;
+        if (p !== undefined) {
+          if (p < minPrice) minPrice = p;
+          if (p > maxPrice) maxPrice = p;
+        }
+      });
+    }
+
     selectedCities.forEach((city, index) => {
       const priceInfo = latestPrices.find(p => p.city_id === city.id);
+      const isMin = isFull && priceInfo?.petrol_price === minPrice;
+      const isMax = isFull && priceInfo?.petrol_price === maxPrice;
+
       const card = document.createElement('div');
-      card.className = 'city-card bg-canvas border border-hairline rounded-2xl p-8 shadow-sm relative group animate-fade-in';
+      card.className = `city-card border rounded-2xl p-8 shadow-sm relative group animate-fade-in ${
+        isMin ? 'bg-success/5 border-success/30' : 
+        isMax ? 'bg-error/5 border-error/30' : 
+        'bg-canvas border-hairline'
+      }`;
       card.innerHTML = `
         <button class="absolute top-4 right-4 p-1.5 hover:bg-error/10 rounded-full transition-colors remove-city" data-index="${index}">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-mute hover:text-error"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -154,25 +176,69 @@ const description = "Compare petrol prices across different cities in India. Sel
     }
     
     tableContainer.classList.remove('hidden');
+    
+    let minPrice = Infinity;
+    let maxPrice = -Infinity;
+    const isFull = selectedCities.length === MAX_CITIES;
+    
+    if (isFull) {
+      selectedCities.forEach(city => {
+        const p = latestPrices.find(lp => lp.city_id === city.id)?.petrol_price;
+        if (p !== undefined) {
+          if (p < minPrice) minPrice = p;
+          if (p > maxPrice) maxPrice = p;
+        }
+      });
+    }
+
     const rows = [
       { label: 'Today\'s Price', key: 'petrol_price', prefix: '₹' },
       { label: 'Daily Change', key: 'price_change', prefix: '₹' },
     ];
     
-    tableBody.innerHTML = rows.map(row => `
+    let tableHtml = rows.map(row => `
       <tr>
         <td class="px-8 py-6 text-sm font-semibold text-body bg-canvas-soft-2 w-48">${row.label}</td>
         ${selectedCities.map(city => {
           const priceInfo = latestPrices.find(p => p.city_id === city.id);
           const val = priceInfo?.[row.key];
+          let colorClass = 'text-ink';
+          if (isFull && row.key === 'petrol_price') {
+            if (val === minPrice) colorClass = 'text-success font-bold';
+            if (val === maxPrice) colorClass = 'text-error font-bold';
+          }
           return `
-            <td class="px-8 py-6 text-sm font-mono font-bold text-ink">
+            <td class="px-8 py-6 text-sm font-mono ${colorClass}">
               ${row.prefix}${val?.toFixed(2) || 'N/A'}
             </td>
           `;
         }).join('')}
       </tr>
     `).join('');
+
+    if (isFull) {
+      tableHtml += `
+        <tr>
+          <td class="px-8 py-6 text-sm font-semibold text-body bg-canvas-soft-2 w-48 italic">Diff. from Lowest</td>
+          ${selectedCities.map(city => {
+            const priceInfo = latestPrices.find(p => p.city_id === city.id);
+            const val = priceInfo?.petrol_price;
+            const diff = val !== undefined ? val - minPrice : null;
+            let colorClass = 'text-ink';
+            if (diff === 0) colorClass = 'text-success font-bold';
+            else if (val === maxPrice) colorClass = 'text-error font-bold';
+            
+            return `
+              <td class="px-8 py-6 text-sm font-mono ${colorClass}">
+                ${diff !== null ? (diff === 0 ? 'Lowest' : '+₹' + diff.toFixed(2)) : 'N/A'}
+              </td>
+            `;
+          }).join('')}
+        </tr>
+      `;
+    }
+    
+    tableBody.innerHTML = tableHtml;
   }
   
   addBtn?.addEventListener('click', () => modal?.classList.remove('hidden'));
