@@ -1,0 +1,70 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { AlertTriangle, Home, RefreshCw } from '@lucide/astro';
+
+interface Props {
+  error: unknown;
+}
+
+const { error } = Astro.props;
+
+// Log error to server-side console (optional, depending on your logging setup)
+if (error) {
+  console.error('Server Error:', error);
+}
+
+const title = "500 - Internal Server Error | Petrol Price India";
+const description = "Something went wrong on our end. We're working to fix it.";
+---
+
+<Base title={title} description={description}>
+  <Navbar />
+  
+  <main class="flex-grow flex items-center justify-center py-20 px-4">
+    <div class="max-w-md w-full text-center">
+      <div class="relative mb-8">
+        <h1 class="text-[12rem] font-bold leading-none text-ink/5 dark:text-canvas/5 select-none">
+          500
+        </h1>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="bg-red-500/10 p-6 rounded-full">
+            <AlertTriangle class="w-20 h-20 text-red-500" />
+          </div>
+        </div>
+      </div>
+      
+      <h2 class="text-3xl font-bold mb-4">Internal Server Error</h2>
+      <p class="text-ink-soft mb-10 text-lg">
+        Something went wrong on our end. We're working to fix it as soon as possible. Please try again later.
+      </p>
+      
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a 
+          href="/" 
+          class="inline-flex items-center justify-center gap-2 bg-ink text-canvas dark:bg-canvas dark:text-ink px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition-all w-full sm:w-auto"
+        >
+          <Home class="w-5 h-5" />
+          Back to Home
+        </a>
+        <button 
+          onclick="window.location.reload()"
+          class="inline-flex items-center justify-center gap-2 bg-ink/5 dark:bg-canvas/5 text-ink dark:text-canvas px-8 py-3 rounded-xl font-semibold hover:bg-ink/10 dark:hover:bg-canvas/10 transition-all w-full sm:w-auto"
+        >
+          <RefreshCw class="w-5 h-5" />
+          Try Again
+        </button>
+      </div>
+      
+      {import.meta.env.DEV && error && (
+        <div class="mt-12 p-4 bg-ink/5 dark:bg-canvas/5 rounded-lg text-left overflow-auto max-h-40">
+          <p class="font-mono text-sm text-red-500 mb-2 font-semibold underline">Debug Info (Dev Only):</p>
+          <pre class="font-mono text-xs text-ink-soft">{error instanceof Error ? error.stack : JSON.stringify(error, null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  </main>
+
+  <Footer />
+</Base>

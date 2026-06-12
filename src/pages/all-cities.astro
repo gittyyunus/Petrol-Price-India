@@ -12,6 +12,7 @@ const { data: cities } = await supabase
 
 // Group by alphabet
 const groupedCities = cities?.reduce((acc, city) => {
+  if (!city.city_name) return acc;
   const char = city.city_name[0].toUpperCase();
   if (!acc[char]) acc[char] = [];
   acc[char].push(city);

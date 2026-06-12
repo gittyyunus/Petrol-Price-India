@@ -1,0 +1,132 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { Mail, MapPin, MessageSquare } from '@lucide/astro';
+---
+
+<Base 
+  title="Contact Us | Petrol Price India" 
+  description="Get in touch with Petrol Price India. We value your feedback, questions, and suggestions regarding our fuel price tracking services."
+>
+  <Navbar />
+  
+  <main class="flex-grow">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h1 class="text-4xl font-bold tracking-tight text-ink sm:text-5xl mb-4">Contact Us</h1>
+        <p class="text-lg text-body max-w-2xl mx-auto">Have questions or feedback? We'd love to hear from you. Our team is dedicated to providing the best fuel tracking experience.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        <!-- Contact Information -->
+        <div class="space-y-8">
+          <div>
+            <h2 class="text-2xl font-semibold mb-6">Get in Touch</h2>
+            <p class="text-body mb-8">Feel free to reach out through any of these channels. We aim to respond to all inquiries within 24-48 hours.</p>
+          </div>
+
+          <div class="space-y-6">
+            <div class="flex items-start gap-4">
+              <div class="p-3 bg-canvas-soft rounded-lg text-ink">
+                <Mail class="h-6 w-6" />
+              </div>
+              <div>
+                <h3 class="font-medium text-ink">Email</h3>
+                <p class="text-body text-sm">support@petrolpriceindia.com</p>
+                <p class="text-mute text-xs mt-1">For general inquiries and support</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="p-3 bg-canvas-soft rounded-lg text-ink">
+                <MessageSquare class="h-6 w-6" />
+              </div>
+              <div>
+                <h3 class="font-medium text-ink">Feedback</h3>
+                <p class="text-body text-sm">feedback@petrolpriceindia.com</p>
+                <p class="text-mute text-xs mt-1">Help us improve our platform</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="p-3 bg-canvas-soft rounded-lg text-ink">
+                <MapPin class="h-6 w-6" />
+              </div>
+              <div>
+                <h3 class="font-medium text-ink">Location</h3>
+                <p class="text-body text-sm">Mumbai, Maharashtra, India</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Form -->
+        <div class="bg-canvas border border-hairline rounded-2xl p-8 shadow-sm">
+          <form class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label for="name" class="block text-sm font-medium text-ink mb-2">Name</label>
+                <input 
+                  type="text" 
+                  id="name" 
+                  name="name" 
+                  class="w-full px-4 py-2.5 bg-canvas-soft border border-hairline rounded-lg focus:ring-2 focus:ring-ink/10 focus:border-ink outline-none transition-all text-sm"
+                  placeholder="Your name"
+                  required
+                />
+              </div>
+              <div>
+                <label for="email" class="block text-sm font-medium text-ink mb-2">Email</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  name="email" 
+                  class="w-full px-4 py-2.5 bg-canvas-soft border border-hairline rounded-lg focus:ring-2 focus:ring-ink/10 focus:border-ink outline-none transition-all text-sm"
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="subject" class="block text-sm font-medium text-ink mb-2">Subject</label>
+              <select 
+                id="subject" 
+                name="subject" 
+                class="w-full px-4 py-2.5 bg-canvas-soft border border-hairline rounded-lg focus:ring-2 focus:ring-ink/10 focus:border-ink outline-none transition-all text-sm appearance-none"
+              >
+                <option value="general">General Inquiry</option>
+                <option value="data">Data Correction</option>
+                <option value="feedback">Feedback/Suggestions</option>
+                <option value="api">API Access</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="message" class="block text-sm font-medium text-ink mb-2">Message</label>
+              <textarea 
+                id="message" 
+                name="message" 
+                rows="5" 
+                class="w-full px-4 py-2.5 bg-canvas-soft border border-hairline rounded-lg focus:ring-2 focus:ring-ink/10 focus:border-ink outline-none transition-all text-sm"
+                placeholder="How can we help you?"
+                required
+              ></textarea>
+            </div>
+
+            <button 
+              type="submit" 
+              class="w-full py-3 px-6 bg-ink text-canvas font-medium rounded-lg hover:bg-ink/90 transition-colors shadow-lg shadow-ink/10"
+            >
+              Send Message
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

@@ -1,0 +1,52 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { Search, Home, ArrowLeft } from '@lucide/astro';
+
+const title = "404 - Page Not Found | Petrol Price India";
+const description = "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.";
+---
+
+<Base title={title} description={description}>
+  <Navbar />
+  
+  <main class="flex-grow flex items-center justify-center py-20 px-4">
+    <div class="max-w-md w-full text-center">
+      <div class="relative mb-8">
+        <h1 class="text-[12rem] font-bold leading-none text-ink/5 dark:text-canvas/5 select-none">
+          404
+        </h1>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="bg-accent/10 p-6 rounded-full">
+            <Search class="w-20 h-20 text-accent" />
+          </div>
+        </div>
+      </div>
+      
+      <h2 class="text-3xl font-bold mb-4">Oops! Page not found</h2>
+      <p class="text-ink-soft mb-10 text-lg">
+        The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.
+      </p>
+      
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a 
+          href="/" 
+          class="inline-flex items-center justify-center gap-2 bg-ink text-canvas dark:bg-canvas dark:text-ink px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition-all w-full sm:w-auto"
+        >
+          <Home class="w-5 h-5" />
+          Back to Home
+        </a>
+        <button 
+          onclick="history.back()"
+          class="inline-flex items-center justify-center gap-2 bg-ink/5 dark:bg-canvas/5 text-ink dark:text-canvas px-8 py-3 rounded-xl font-semibold hover:bg-ink/10 dark:hover:bg-canvas/10 transition-all w-full sm:w-auto"
+        >
+          <ArrowLeft class="w-5 h-5" />
+          Go Back
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Base>

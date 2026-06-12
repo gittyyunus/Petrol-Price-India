@@ -1,0 +1,52 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Base 
+  title="About Us | Petrol Price India" 
+  description="Learn about Petrol Price India, our mission to provide accurate and real-time fuel prices across India, and how we help consumers make informed decisions."
+>
+  <Navbar />
+  
+  <main class="flex-grow">
+    <div class="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold tracking-tight text-ink sm:text-5xl mb-4">About Us</h1>
+        <p class="text-lg text-body">Empowering Indian consumers with real-time fuel price transparency.</p>
+      </div>
+
+      <div class="prose prose-slate max-w-none dark:prose-invert">
+        <section class="mb-12">
+          <h2 class="text-2xl font-semibold mb-4">Our Mission</h2>
+          <p class="mb-4">
+            At Petrol Price India, we believe that transparency is key to a fair market. Fuel prices in India change daily, and keeping track of these changes can be challenging for the average consumer. Our mission is to provide accurate, real-time, and easy-to-access fuel price data for over 700 cities across India.
+          </p>
+          <p>
+            By providing this data along with historical trends and analytical tools, we empower motorists, businesses, and daily commuters to make smarter decisions about their fuel consumption and budgeting.
+          </p>
+        </section>
+
+        <section class="mb-12">
+          <h2 class="text-2xl font-semibold mb-4">What We Offer</h2>
+          <ul class="list-disc pl-6 space-y-2">
+            <li><strong>Daily Price Updates:</strong> Real-time tracking of petrol and diesel prices as they are revised every morning.</li>
+            <li><strong>State-wide Coverage:</strong> From major metros like Mumbai and Delhi to smaller towns, we cover the length and breadth of the country.</li>
+            <li><strong>Price Analytics:</strong> View historical charts to understand price trends over weeks, months, or years.</li>
+            <li><strong>Smart Tools:</strong> Use our fuel cost calculator and city comparison tools to plan your trips and manage expenses.</li>
+          </ul>
+        </section>
+
+        <section class="mb-12">
+          <h2 class="text-2xl font-semibold mb-4">Our Data</h2>
+          <p>
+            We source our data from reliable public records and official oil marketing company (OMC) updates. While we strive for 100% accuracy, prices may vary slightly at individual retail outlets due to local levies and transportation costs. We always recommend checking with your local fuel station for the final price.
+          </p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
