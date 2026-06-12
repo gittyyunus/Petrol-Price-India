@@ -122,10 +122,42 @@ if (type === 'city') {
     "mainEntity": [
       {
         "@type": "Question",
-        "name": `What is the ${fuel} price in ${city.city_name} today?`,
+        "name": `What is the ${fuelLabel} price in ${city.city_name} today?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `The ${fuel} price in ${city.city_name} today is ₹${latestPrice?.[priceKey] || 'XX.XX'} per litre.`
+          "text": `The ${fuelLabel} price in ${city.city_name} today is ₹${latestPrice?.[priceKey]?.toFixed(2) || 'XX.XX'} per litre.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Is the ${fuel} price going up in ${city.city_name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `As of today, the ${fuel} price in ${city.city_name} is ₹${latestPrice?.[priceKey]?.toFixed(2) || 'XX.XX'}. Recent trends show a ${latestPrice?.[changeKey] > 0 ? 'rising' : 'fluctuating'} pattern depending on international crude rates.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Why is the ${fuel} price high in ${city.city_name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The price in ${city.city_name} is a combination of the base cost, central excise duty, and the state VAT of ${city.state_name}.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `At what time is the ${fuelLabel} price revised daily?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The ${fuelLabel} price in ${city.city_name} is revised every morning at 6:00 AM IST.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `What was the highest and lowest ${fuelLabel} price in ${city.city_name} in the last 30 days?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `In the last 30 days, the highest ${fuelLabel} price in ${city.city_name} was ₹${priceHistory.length > 0 ? Math.max(...priceHistory.map(p => p[priceKey] || 0)).toFixed(2) : 'N/A'} and the lowest was ₹${priceHistory.length > 0 ? Math.min(...priceHistory.map(p => p[priceKey] || Infinity)).toFixed(2) : 'N/A'}.`
         }
       }
     ]
@@ -228,6 +260,33 @@ if (type === 'state') {
                     For those commuting across {city.state_name}, it's also worth comparing rates with nearby cities. Often, prices in {city.city_name} can differ from neighboring districts due to local dealer commissions and transport costs. Use our <a href="/calculator" class="text-primary hover:underline font-semibold">Fuel Calculator</a> to see how today's {fuel} rate affects your long-distance trip costs.
                   </p>
                 </article>
+              </section>
+
+              {/* Dynamic FAQ Section */}
+              <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
+                <h2 class="text-2xl font-bold text-ink mb-6">Frequently Asked Questions — {city.city_name}</h2>
+                <div class="space-y-6">
+                  <div class="border-b border-hairline pb-4 last:border-0">
+                    <h3 class="text-base font-bold text-ink mb-2">What is the {fuelLabel} price in {city.city_name} today?</h3>
+                    <p class="text-sm text-body">The current {fuelLabel} price in {city.city_name} is <strong>₹{latestPrice?.[priceKey]?.toFixed(2) || 'XX.XX'}</strong> per litre as of {formatDate(today)}.</p>
+                  </div>
+                  <div class="border-b border-hairline pb-4 last:border-0">
+                    <h3 class="text-base font-bold text-ink mb-2">Is the {fuelLabel} price going up in {city.city_name}?</h3>
+                    <p class="text-sm text-body">Today's price shows a change of <strong>{formatChange(latestPrice?.[changeKey])}</strong> compared to yesterday. Recent trends indicate a {latestPrice?.[changeKey] > 0 ? 'rising' : 'stable'} market in {city.state_name}.</p>
+                  </div>
+                  <div class="border-b border-hairline pb-4 last:border-0">
+                    <h3 class="text-base font-bold text-ink mb-2">Why is {fuelLabel} expensive in {city.city_name}?</h3>
+                    <p class="text-sm text-body">The retail price in {city.city_name} includes central excise duty, dealer commissions, and the state-level VAT specific to {city.state_name}.</p>
+                  </div>
+                  <div class="border-b border-hairline pb-4 last:border-0">
+                    <h3 class="text-base font-bold text-ink mb-2">When is the {fuelLabel} rate updated?</h3>
+                    <p class="text-sm text-body">Fuel rates in {city.city_name} are updated daily at 6:00 AM IST by Oil Marketing Companies (OMCs) like IOC, HPCL, and BPCL.</p>
+                  </div>
+                  <div class="border-b border-hairline pb-4 last:border-0">
+                    <h3 class="text-base font-bold text-ink mb-2">What was the 30-day high for {fuelLabel} in {city.city_name}?</h3>
+                    <p class="text-sm text-body">In the last 30 days, the highest recorded price in {city.city_name} was <strong>₹{priceHistory.length > 0 ? Math.max(...priceHistory.map(p => p[priceKey] || 0)).toFixed(2) : 'N/A'}</strong>.</p>
+                  </div>
+                </div>
               </section>
 
               <section class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm">
