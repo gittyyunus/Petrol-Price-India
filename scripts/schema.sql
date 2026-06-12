@@ -17,7 +17,13 @@ CREATE TABLE prices (
   city_name TEXT NOT NULL,
   state_name TEXT NOT NULL,
   petrol_price NUMERIC(6,2),
+  diesel_price NUMERIC(6,2),
+  autogas_price NUMERIC(6,2),
+  cng_price NUMERIC(6,2),
   price_change NUMERIC(5,2),
+  diesel_change NUMERIC(5,2),
+  autogas_change NUMERIC(5,2),
+  cng_change NUMERIC(5,2),
   scraped_at TIMESTAMPTZ DEFAULT NOW(),
   date DATE DEFAULT CURRENT_DATE
 );

@@ -9,9 +9,10 @@ interface Props {
   lastUpdated: string;
   large?: boolean;
   slug?: string;
+  fuel?: string;
 }
 
-const { city, state, price, change, lastUpdated, large = false, slug } = Astro.props;
+const { city, state, price, change, lastUpdated, large = false, slug, fuel = 'petrol' } = Astro.props;
 
 const citySlug = slug || city.toLowerCase().replace(/ /g, '-');
 
@@ -52,7 +53,7 @@ const formattedChange = Math.abs(change || 0).toFixed(2);
   
   {large && (
     <div class="mt-8 pt-8 border-t border-hairline flex gap-4">
-      <a href={`/petrol-price-in-${citySlug}`} class="flex-1 bg-primary text-canvas text-center py-3 rounded-full text-sm font-semibold hover:bg-ink/90 transition-colors">
+      <a href={`/${fuel}-price-in-${citySlug}`} class="flex-1 bg-primary text-canvas text-center py-3 rounded-full text-sm font-semibold hover:bg-ink/90 transition-colors">
         View History
       </a>
       <button class="flex-1 bg-canvas border border-hairline text-ink py-3 rounded-full text-sm font-semibold hover:bg-canvas-soft-2 transition-colors">

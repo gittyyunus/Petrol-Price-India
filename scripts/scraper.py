@@ -3,7 +3,7 @@ import time
 import requests
 import re
 from bs4 import BeautifulSoup
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import logging
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -42,34 +42,40 @@ def extract_city_id(href):
         return int(match.group(1))
     return None
 
-def scrape_india_prices():
-    url = "https://www.mypetrolprice.com/petrol-price-in-india.aspx"
+def scrape_fuel_prices(fuel_type):
+    urls = {
+        "petrol": "https://www.mypetrolprice.com/petrol-price-in-india.aspx",
+        "diesel": "https://www.mypetrolprice.com/diesel-price-in-india.aspx",
+        "autogas": "https://www.mypetrolprice.com/autogas-autolpg-price-in-india.aspx",
+        "cng": "https://www.mypetrolprice.com/cng-price-in-india.aspx"
+    }
+    
+    url = urls.get(fuel_type)
+    if not url:
+        return []
+        
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
     
-    logger.info(f"Fetching {url}")
+    logger.info(f"Fetching {fuel_type} prices from {url}")
     try:
         response = requests.get(url, headers=headers, timeout=20)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         
         results = []
-        # Find all H2 tags which are state names
         h2_tags = soup.find_all('h2')
         
         for h2 in h2_tags:
             state_name = h2.get_text(strip=True)
-            if not state_name or "Petrol Price" in state_name:
+            if not state_name or "Price" in state_name:
                 continue
             
             state_slug = slugify(state_name)
             
-            # The cities are usually in a container following the H2
-            # Let's assume they are in links following the H2 until the next H2
             sibling = h2.find_next_sibling()
             while sibling and sibling.name != 'h2':
-                # Find all links in this sibling
                 links = sibling.find_all('a', href=True)
                 for link in links:
                     href = link['href']
@@ -80,9 +86,6 @@ def scrape_india_prices():
                     city_name = link.get_text(strip=True)
                     city_slug = slugify(city_name)
                     
-                    # Look for price and change near the link
-                    # New structure: The price is in a div.txtC with a <b> tag
-                    # The change is also in that same div
                     parent_container = link.find_parent('div', class_='SF')
                     price_val = None
                     change_val = 0.0
@@ -92,14 +95,12 @@ def scrape_india_prices():
                         if price_div:
                             price_tag = price_div.find('b')
                             if price_tag:
-                                # strip ₹ and spaces
                                 price_text = price_tag.get_text(strip=True).replace('₹', '').replace(' ', '')
                                 try:
                                     price_val = float(price_text)
                                 except ValueError:
                                     pass
                             
-                            # Price change is usually in the text of the price_div, e.g. (0.00)
                             div_text = price_div.get_text()
                             change_match = re.search(r'\(([-+]?\d*\.?\d+)\)', div_text)
                             if change_match:
@@ -115,17 +116,16 @@ def scrape_india_prices():
                             "city_slug": city_slug,
                             "state_name": state_name,
                             "state_slug": state_slug,
-                            "petrol_price": price_val,
-                            "price_change": change_val,
-                            "date": date.today().isoformat(),
-                            "scraped_at": datetime.now(datetime.UTC).isoformat()
+                            "price": price_val,
+                            "change": change_val,
+                            "fuel_type": fuel_type
                         })
                 
                 sibling = sibling.find_next_sibling()
         
         return results
     except Exception as e:
-        logger.error(f"Scrape failed: {e}")
+        logger.error(f"Scrape failed for {fuel_type}: {e}")
         return []
 
 def run():
@@ -133,16 +133,40 @@ def run():
     if not supabase:
         return
     
-    data = scrape_india_prices()
-    if not data:
+    all_fuel_data = {}
+    fuel_types = ["petrol", "diesel", "autogas", "cng"]
+    
+    for ft in fuel_types:
+        data = scrape_fuel_prices(ft)
+        for item in data:
+            city_id = item["city_id"]
+            if city_id not in all_fuel_data:
+                all_fuel_data[city_id] = {
+                    "city_id": city_id,
+                    "city_name": item["city_name"],
+                    "city_slug": item["city_slug"],
+                    "state_name": item["state_name"],
+                    "state_slug": item["state_slug"],
+                    "date": date.today().isoformat(),
+                    "scraped_at": datetime.now(timezone.utc).isoformat()
+                }
+            
+            all_fuel_data[city_id][f"{ft}_price"] = item["price"]
+            # Change column naming depends on petrol vs others
+            if ft == "petrol":
+                all_fuel_data[city_id]["price_change"] = item["change"]
+            else:
+                all_fuel_data[city_id][f"{ft}_change"] = item["change"]
+    
+    if not all_fuel_data:
         logger.warning("No data scraped.")
         return
     
-    logger.info(f"Scraped {len(data)} cities. Syncing with database...")
+    logger.info(f"Scraped {len(all_fuel_data)} cities. Syncing with database...")
     
-    for item in data:
-        # 1. Ensure city exists in 'cities' table
-        city_data = {
+    for city_id, item in all_fuel_data.items():
+        # 1. Ensure city exists
+        city_record = {
             "id": item["city_id"],
             "city_name": item["city_name"],
             "city_slug": item["city_slug"],
@@ -150,22 +174,30 @@ def run():
             "state_slug": item["state_slug"]
         }
         try:
-            supabase.table("cities").upsert(city_data).execute()
+            supabase.table("cities").upsert(city_record).execute()
         except Exception as e:
             logger.error(f"Error upserting city {item['city_name']}: {e}")
             
         # 2. Insert/Upsert price record
-        price_data = {
+        price_record = {
             "city_id": item["city_id"],
             "city_name": item["city_name"],
             "state_name": item["state_name"],
-            "petrol_price": item["petrol_price"],
-            "price_change": item["price_change"],
             "date": item["date"],
             "scraped_at": item["scraped_at"]
         }
+        
+        # Add fuel prices and changes if they exist
+        for ft in ["petrol", "diesel", "autogas", "cng"]:
+            if f"{ft}_price" in item:
+                price_record[f"{ft}_price"] = item[f"{ft}_price"]
+            
+            change_col = "price_change" if ft == "petrol" else f"{ft}_change"
+            if change_col in item:
+                price_record[change_col] = item[change_col]
+
         try:
-            supabase.table("prices").upsert(price_data, on_conflict="city_id, date").execute()
+            supabase.table("prices").upsert(price_record, on_conflict="city_id, date").execute()
         except Exception as e:
             logger.error(f"Error upserting price for {item['city_name']}: {e}")
 

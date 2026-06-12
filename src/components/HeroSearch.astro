@@ -1,0 +1,215 @@
+---
+import { supabase } from '../lib/supabase';
+
+// Fetch all cities and states for the search index
+const { data: cities } = await supabase.from('cities').select('city_name, city_slug, state_name, state_slug');
+
+// Extract unique states
+const statesMap = new Map();
+cities?.forEach(c => {
+  if (c.state_slug && !statesMap.has(c.state_slug)) {
+    statesMap.set(c.state_slug, { name: c.state_name, slug: c.state_slug });
+  }
+});
+const states = Array.from(statesMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+---
+
+<div class="w-full max-w-4xl mx-auto bg-canvas border border-hairline rounded-2xl shadow-2xl p-2 sm:p-4 animate-fade-in" id="hero-search-container">
+  <div class="flex flex-col md:flex-row items-stretch gap-2">
+    {/* Fuel Type Dropdown */}
+    <div class="relative flex-1 min-w-[140px]">
+      <label class="absolute left-4 top-2 text-[10px] font-bold uppercase tracking-wider text-mute">Fuel Type</label>
+      <select 
+        id="fuel-type-select"
+        class="w-full h-16 pt-6 pl-4 pr-10 rounded-xl bg-canvas-soft border-transparent focus:border-primary focus:ring-0 text-ink font-semibold appearance-none cursor-pointer transition-all"
+      >
+        <option value="petrol">Petrol</option>
+        <option value="diesel">Diesel</option>
+        <option value="autogas">AutoGas</option>
+        <option value="cng">CNG</option>
+      </select>
+      <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-mute"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+
+    {/* State Dropdown/Input */}
+    <div class="relative flex-[1.5] group">
+      <label class="absolute left-4 top-2 text-[10px] font-bold uppercase tracking-wider text-mute z-10">Select State</label>
+      <input 
+        type="text" 
+        id="state-search-input"
+        placeholder="Search state..." 
+        class="w-full h-16 pt-6 pl-4 pr-10 rounded-xl bg-canvas-soft border-transparent focus:border-primary focus:ring-0 text-ink font-semibold transition-all"
+        autocomplete="off"
+      />
+      <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-mute"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </div>
+      <div id="state-results" class="absolute top-full left-0 right-0 mt-2 bg-canvas border border-hairline rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto hidden">
+        <div id="state-list" class="divide-y divide-hairline"></div>
+      </div>
+    </div>
+
+    {/* City Dropdown/Input */}
+    <div class="relative flex-[1.5] group">
+      <label class="absolute left-4 top-2 text-[10px] font-bold uppercase tracking-wider text-mute z-10">Enter City</label>
+      <input 
+        type="text" 
+        id="city-search-input"
+        placeholder="Type city name..." 
+        class="w-full h-16 pt-6 pl-4 pr-10 rounded-xl bg-canvas-soft border-transparent focus:border-primary focus:ring-0 text-ink font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        autocomplete="off"
+        disabled
+      />
+      <div id="city-results" class="absolute top-full left-0 right-0 mt-2 bg-canvas border border-hairline rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto hidden">
+        <div id="city-list" class="divide-y divide-hairline"></div>
+      </div>
+    </div>
+
+    {/* Action Button */}
+    <button 
+      id="check-price-btn"
+      class="md:w-auto w-full h-16 px-8 rounded-xl bg-primary text-canvas font-bold hover:bg-ink transition-all flex items-center justify-center gap-2 group whitespace-nowrap"
+    >
+      <span>Check Price</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-hover:translate-x-1"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </button>
+  </div>
+</div>
+
+<script define:vars={{ cities, states }}>
+  const fuelSelect = document.getElementById('fuel-type-select');
+  const stateInput = document.getElementById('state-search-input');
+  const stateResults = document.getElementById('state-results');
+  const stateList = document.getElementById('state-list');
+  
+  const cityInput = document.getElementById('city-search-input');
+  const cityResults = document.getElementById('city-results');
+  const cityList = document.getElementById('city-list');
+  
+  const checkBtn = document.getElementById('check-price-btn');
+  
+  let selectedState = null;
+  let selectedCity = null;
+
+  // --- State Search Logic ---
+  stateInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (query.length === 0) {
+      renderStates(states);
+      stateResults.classList.remove('hidden');
+      return;
+    }
+    
+    const filtered = states.filter(s => s.name.toLowerCase().includes(query));
+    renderStates(filtered);
+    stateResults.classList.remove('hidden');
+  });
+
+  stateInput.addEventListener('focus', () => {
+    renderStates(states);
+    stateResults.classList.remove('hidden');
+  });
+
+  function renderStates(list) {
+    if (list.length === 0) {
+      stateList.innerHTML = '<div class="px-4 py-3 text-sm text-mute">No states found</div>';
+      return;
+    }
+    stateList.innerHTML = list.map(s => `
+      <div class="px-4 py-3 hover:bg-canvas-soft-2 cursor-pointer text-sm font-medium transition-colors" data-slug="${s.slug}" data-name="${s.name}">
+        ${s.name}
+      </div>
+    `).join('');
+    
+    stateList.querySelectorAll('div').forEach(el => {
+      el.addEventListener('click', () => {
+        const name = el.getAttribute('data-name');
+        const slug = el.getAttribute('data-slug');
+        stateInput.value = name;
+        selectedState = { name, slug };
+        stateResults.classList.add('hidden');
+        
+        // Enable city input and filter by state
+        cityInput.disabled = false;
+        cityInput.value = '';
+        cityInput.focus();
+        selectedCity = null;
+      });
+    });
+  }
+
+  // --- City Search Logic ---
+  cityInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (!selectedState) return;
+
+    const stateCities = cities.filter(c => c.state_name === selectedState.name);
+    
+    if (query.length === 0) {
+      renderCities(stateCities.slice(0, 20));
+      cityResults.classList.remove('hidden');
+      return;
+    }
+    
+    const filtered = stateCities.filter(c => c.city_name.toLowerCase().includes(query)).slice(0, 10);
+    renderCities(filtered);
+    cityResults.classList.remove('hidden');
+  });
+
+  cityInput.addEventListener('focus', () => {
+    if (!selectedState) return;
+    const stateCities = cities.filter(c => c.state_name === selectedState.name).slice(0, 20);
+    renderCities(stateCities);
+    cityResults.classList.remove('hidden');
+  });
+
+  function renderCities(list) {
+    if (list.length === 0) {
+      cityList.innerHTML = '<div class="px-4 py-3 text-sm text-mute">No cities found</div>';
+      return;
+    }
+    cityList.innerHTML = list.map(c => `
+      <div class="px-4 py-3 hover:bg-canvas-soft-2 cursor-pointer text-sm font-medium transition-colors" data-slug="${c.city_slug}" data-name="${c.city_name}">
+        ${c.city_name}
+      </div>
+    `).join('');
+    
+    cityList.querySelectorAll('div').forEach(el => {
+      el.addEventListener('click', () => {
+        const name = el.getAttribute('data-name');
+        const slug = el.getAttribute('data-slug');
+        cityInput.value = name;
+        selectedCity = { name, slug };
+        cityResults.classList.add('hidden');
+      });
+    });
+  }
+
+  // --- Redirect Logic ---
+  checkBtn.addEventListener('click', () => {
+    const fuel = fuelSelect.value;
+    const targetSlug = selectedCity?.slug || selectedState?.slug;
+    
+    if (!targetSlug) {
+      alert('Please select a state and optionally a city.');
+      return;
+    }
+    
+    // Construct URL: /[fuel]-price-in-[slug]
+    // Note: We might need to handle the case where the slug doesn't exist for a fuel type yet,
+    // but for now let's assume the redirection will land on a 404 or handled page.
+    window.location.href = `/${fuel}-price-in-${targetSlug}`;
+  });
+
+  // Close on click outside
+  document.addEventListener('click', (e) => {
+    if (!stateInput.contains(e.target) && !stateResults.contains(e.target)) {
+      stateResults.classList.add('hidden');
+    }
+    if (!cityInput.contains(e.target) && !cityResults.contains(e.target)) {
+      cityResults.classList.add('hidden');
+    }
+  });
+</script>

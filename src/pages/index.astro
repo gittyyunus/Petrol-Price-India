@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import PriceCard from '../components/PriceCard.astro';
-import CitySearch from '../components/CitySearch.astro';
+import HeroSearch from '../components/HeroSearch.astro';
 import { Search, MapPin, ArrowRight, Zap, TrendingUp, TrendingDown } from '@lucide/astro';
 import { supabase } from '../lib/supabase';
 import { formatPrice } from '../lib/utils';
@@ -77,13 +77,13 @@ const lastUpdatedTime = mumbaiPrice ? new Date(mumbaiPrice.scraped_at).toLocaleT
           Get real-time petrol prices for {cityCount || '700+'} cities across India. Minimal, fast, and data-driven insights.
         </p>
         
-        <div class="max-w-2xl mx-auto mb-16">
-          <CitySearch />
+        <div class="mb-16">
+          <HeroSearch />
           
-          <div class="mt-4 flex flex-wrap justify-center gap-2">
-            <span class="text-xs text-mute font-medium">Quick links:</span>
+          <div class="mt-8 flex flex-wrap justify-center gap-4">
+            <span class="text-xs text-mute font-medium uppercase tracking-widest">Popular:</span>
             {["Mumbai", "Delhi", "Bangalore", "Chennai"].map(city => (
-              <a href={`/petrol-price-in-${city.toLowerCase()}`} class="text-xs text-body hover:text-ink hover:underline">{city}</a>
+              <a href={`/petrol-price-in-${city.toLowerCase()}`} class="text-xs font-bold text-body hover:text-primary transition-colors">{city}</a>
             ))}
           </div>
         </div>
