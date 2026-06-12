@@ -27,9 +27,22 @@
   --shadow-lg: 0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a;
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root.dark {
+  --color-primary: #ffffff;
+  --color-ink: #f5f5f5;
+  --color-body: #a1a1a1;
+  --color-mute: #717171;
+  --color-hairline: #262626;
+  --color-canvas: #0a0a0a;
+  --color-canvas-soft: #121212;
+  --color-canvas-soft-2: #1a1a1a;
+}
+
 @layer base {
   body {
-    @apply bg-canvas-soft text-ink font-sans;
+    @apply bg-canvas-soft text-ink font-sans transition-colors duration-300;
   }
 
   /* Tactile button feedback */
