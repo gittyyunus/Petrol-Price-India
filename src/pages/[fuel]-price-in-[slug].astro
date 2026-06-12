@@ -11,6 +11,26 @@ export async function getStaticPaths() {
   const { data: cities } = await supabase.from('cities').select('*');
   const fuelTypes = ['petrol', 'diesel', 'autogas', 'cng'];
   
+  const CITY_ALIASES = {
+    'bangalore': 'bengaluru',
+    'bombay': 'mumbai',
+    'madras': 'chennai',
+    'calcutta': 'kolkata',
+    'trivandrum': 'thiruvananthapuram',
+    'vizag': 'visakhapatnam',
+    'pondicherry': 'puducherry',
+    'banaras': 'varanasi',
+    'benaras': 'varanasi',
+    'gauhati': 'guwahati',
+    'baroda': 'vadodara',
+    'poona': 'pune',
+    'cawnpore': 'kanpur',
+    'belgaum': 'belagavi',
+    'sholapur': 'solapur',
+    'simla': 'shimla',
+    'waltair': 'visakhapatnam'
+  };
+
   if (!cities) return [];
 
   const paths = [];
@@ -21,6 +41,16 @@ export async function getStaticPaths() {
       paths.push({
         params: { fuel, slug: city.city_slug },
         props: { type: 'city', city, fuel },
+      });
+
+      // Add alias paths
+      Object.entries(CITY_ALIASES).forEach(([alias, target]) => {
+        if (city.city_slug === target) {
+          paths.push({
+            params: { fuel, slug: alias },
+            props: { type: 'city', city, fuel },
+          });
+        }
       });
     });
 

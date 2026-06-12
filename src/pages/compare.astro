@@ -7,7 +7,8 @@ import { Columns2, Plus, X, ArrowUpDown, TrendingUp, TrendingDown } from '@lucid
 
 const today = new Date().toISOString().split('T')[0];
 const { data: cities } = await supabase.from('cities').select('*').order('city_name');
-const { data: latestPrices } = await supabase.from('prices').select('*').eq('date', today);
+const { data: latestPricesData } = await supabase.from('prices').select('*').eq('date', today);
+const latestPrices = latestPricesData || [];
 
 const title = "Compare Petrol Prices — Side-by-Side Comparison";
 const description = "Compare petrol prices across different cities in India. Select up to 4 cities and see side-by-side price comparison and history.";
@@ -178,11 +179,11 @@ const description = "Compare petrol prices across different cities in India. Sel
   closeModal?.addEventListener('click', () => modal?.classList.add('hidden'));
   
   modalCityList?.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest('button');
+    const btn = e.target.closest('button');
     if (btn) {
-      const id = parseInt(btn.dataset.cityId!);
-      const name = btn.dataset.cityName!;
-      const slug = btn.dataset.citySlug!;
+      const id = parseInt(btn.dataset.cityId);
+      const name = btn.dataset.cityName;
+      const slug = btn.dataset.citySlug;
       
       if (!selectedCities.find(c => c.id === id)) {
         selectedCities.push({ id, name, slug });
@@ -193,19 +194,19 @@ const description = "Compare petrol prices across different cities in India. Sel
   });
   
   grid?.addEventListener('click', (e) => {
-    const removeBtn = (e.target as HTMLElement).closest('.remove-city') as HTMLElement;
+    const removeBtn = e.target.closest('.remove-city');
     if (removeBtn) {
-      const index = parseInt(removeBtn.dataset.index!);
+      const index = parseInt(removeBtn.dataset.index);
       selectedCities.splice(index, 1);
       updateUI();
     }
   });
   
   modalSearch?.addEventListener('input', (e) => {
-    const query = (e.target as HTMLInputElement).value.toLowerCase();
+    const query = e.target.value.toLowerCase();
     const cityBtns = modalCityList?.querySelectorAll('button');
     cityBtns?.forEach(btn => {
-      const name = btn.dataset.cityName!.toLowerCase();
+      const name = (btn.dataset.cityName || "").toLowerCase();
       if (name.includes(query)) {
         btn.classList.remove('hidden');
       } else {

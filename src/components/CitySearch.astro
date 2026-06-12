@@ -34,6 +34,26 @@ const { data: cities } = await supabase.from('cities').select('city_name, city_s
   const resultsContainer = document.getElementById('search-results');
   const resultsList = document.getElementById('results-list');
   
+  const CITY_ALIASES = {
+    'bangalore': 'bengaluru',
+    'bombay': 'mumbai',
+    'madras': 'chennai',
+    'calcutta': 'kolkata',
+    'trivandrum': 'thiruvananthapuram',
+    'vizag': 'visakhapatnam',
+    'pondicherry': 'puducherry',
+    'banaras': 'varanasi',
+    'benaras': 'varanasi',
+    'gauhati': 'guwahati',
+    'baroda': 'vadodara',
+    'poona': 'pune',
+    'cawnpore': 'kanpur',
+    'belgaum': 'belagavi',
+    'sholapur': 'solapur',
+    'simla': 'shimla',
+    'waltair': 'visakhapatnam'
+  };
+
   if (input && resultsContainer && resultsList) {
     input.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase().trim();
@@ -43,11 +63,15 @@ const { data: cities } = await supabase.from('cities').select('city_name, city_s
         return;
       }
       
-      const filtered = cities.filter(c => 
-        (c.city_name.toLowerCase().includes(query) || 
-        c.state_name.toLowerCase().includes(query)) &&
-        c.city_slug
-      ).slice(0, 10);
+      const aliasMatch = CITY_ALIASES[query];
+      const filtered = cities.filter(c => {
+        const cityName = c.city_name.toLowerCase();
+        const stateName = c.state_name.toLowerCase();
+        return (cityName.includes(query) || 
+               stateName.includes(query) || 
+               (aliasMatch && cityName.includes(aliasMatch))) &&
+               c.city_slug;
+      }).slice(0, 10);
       
       if (filtered.length > 0) {
         resultsList.innerHTML = filtered.map(c => `

@@ -93,6 +93,26 @@ const states = Array.from(statesMap.values()).sort((a, b) => a.name.localeCompar
   let selectedState = null;
   let selectedCity = null;
 
+  const CITY_ALIASES = {
+    'bangalore': 'bengaluru',
+    'bombay': 'mumbai',
+    'madras': 'chennai',
+    'calcutta': 'kolkata',
+    'trivandrum': 'thiruvananthapuram',
+    'vizag': 'visakhapatnam',
+    'pondicherry': 'puducherry',
+    'banaras': 'varanasi',
+    'benaras': 'varanasi',
+    'gauhati': 'guwahati',
+    'baroda': 'vadodara',
+    'poona': 'pune',
+    'cawnpore': 'kanpur',
+    'belgaum': 'belagavi',
+    'sholapur': 'solapur',
+    'simla': 'shimla',
+    'waltair': 'visakhapatnam'
+  };
+
   // --- State Search Logic ---
   stateInput.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim();
@@ -153,7 +173,12 @@ const states = Array.from(statesMap.values()).sort((a, b) => a.name.localeCompar
       return;
     }
     
-    const filtered = stateCities.filter(c => c.city_name.toLowerCase().includes(query)).slice(0, 10);
+    const aliasMatch = CITY_ALIASES[query];
+    const filtered = stateCities.filter(c => {
+      const cityName = c.city_name.toLowerCase();
+      return cityName.includes(query) || (aliasMatch && cityName.includes(aliasMatch));
+    }).slice(0, 10);
+
     renderCities(filtered);
     cityResults.classList.remove('hidden');
   });
