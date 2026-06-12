@@ -210,6 +210,26 @@ if (type === 'state') {
                 <div class="h-64 sm:h-80 w-full relative"><canvas id="priceChart"></canvas></div>
               </section>
               
+              {/* SEO Content Section */}
+              <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
+                <article class="prose prose-neutral max-w-none">
+                  <h2 class="text-2xl font-bold text-ink mb-4">About {fuelLabel} Price in {city.city_name}</h2>
+                  <p class="text-body mb-4">
+                    Looking for the latest <strong>{fuel} price in {city.city_name}</strong>? Today, the rate stands at <strong>₹{latestPrice?.[priceKey]?.toFixed(2) || 'XX.XX'}</strong> per litre. This reflects a change of {latestPrice?.[changeKey] > 0 ? 'an increase' : latestPrice?.[changeKey] < 0 ? 'a decrease' : 'no change'} from yesterday's price of ₹{yesterdayPrice?.[priceKey]?.toFixed(2) || 'XX.XX'}. 
+                  </p>
+                  <p class="text-body mb-4">
+                    Tracking <strong>{fuel} price today</strong> in {city.city_name} is crucial for budgeting your daily travel. In {city.state_name}, fuel prices are determined by a combination of international crude oil trends and local state taxes (VAT). Since prices are revised every morning at 6:00 AM, staying updated ensures you can plan your refueling at the most cost-effective time.
+                  </p>
+                  <h3 class="text-xl font-bold text-ink mb-3">Trends and History</h3>
+                  <p class="text-body mb-4">
+                    Over the last 30 days, the <strong>{fuel} price</strong> in {city.city_name} has shown volatility. The highest price recorded in this period was ₹{priceHistory.length > 0 ? Math.max(...priceHistory.map(p => p[priceKey] || 0)).toFixed(2) : 'N/A'}, while the lowest was ₹{priceHistory.length > 0 ? Math.min(...priceHistory.map(p => p[priceKey] || Infinity)).toFixed(2) : 'N/A'}. This 30-day trend is a key indicator of market stability in {city.state_name}.
+                  </p>
+                  <p class="text-body">
+                    For those commuting across {city.state_name}, it's also worth comparing rates with nearby cities. Often, prices in {city.city_name} can differ from neighboring districts due to local dealer commissions and transport costs. Use our <a href="/calculator" class="text-primary hover:underline font-semibold">Fuel Calculator</a> to see how today's {fuel} rate affects your long-distance trip costs.
+                  </p>
+                </article>
+              </section>
+
               <section class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm">
                 <div class="px-6 py-4 border-b border-hairline flex justify-between items-center bg-canvas">
                   <h2 class="text-xl font-bold text-ink">Price History</h2>
