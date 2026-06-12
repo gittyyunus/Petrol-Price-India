@@ -1,5 +1,4 @@
 ---
-import { Search } from '@lucide/astro';
 ---
 
 <header class="sticky top-0 z-50 w-full border-b border-hairline bg-canvas/80 backdrop-blur-md">
@@ -18,17 +17,6 @@ import { Search } from '@lucide/astro';
     </div>
 
     <div class="flex items-center gap-4">
-      <div class="relative hidden sm:block">
-        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <Search class="h-4 w-4 text-mute" />
-        </div>
-        <input 
-          type="text" 
-          placeholder="Search city..." 
-          class="h-9 w-64 rounded-md border border-hairline bg-canvas-soft-2 pl-10 pr-4 text-sm outline-none focus:border-ink/20 focus:ring-1 focus:ring-ink/20 transition-all"
-        />
-      </div>
-      
       <button class="md:hidden p-2 text-body hover:text-ink">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
       </button>
