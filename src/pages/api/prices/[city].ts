@@ -1,15 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 
-export async function getStaticPaths() {
-  const { data: cities } = await supabase.from('cities').select('city_slug');
-  return (cities || [])
-    .filter(city => city.city_slug)
-    .map(city => ({
-      params: { city: city.city_slug }
-    }));
-}
-
 export const GET: APIRoute = async ({ params }) => {
   const { city } = params;
   

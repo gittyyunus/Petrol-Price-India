@@ -7,74 +7,67 @@ import { supabase } from '../lib/supabase';
 import { formatDate, formatChange } from '../lib/utils';
 import { Share2, Info, ChevronRight, MapPin, ArrowUpDown } from '@lucide/astro';
 
-export async function getStaticPaths() {
-  const { data: cities } = await supabase.from('cities').select('*');
-  const fuelTypes = ['petrol', 'diesel', 'autogas', 'cng'];
-  
-  const CITY_ALIASES = {
-    'bangalore': 'bengaluru',
-    'bombay': 'mumbai',
-    'madras': 'chennai',
-    'calcutta': 'kolkata',
-    'trivandrum': 'thiruvananthapuram',
-    'vizag': 'visakhapatnam',
-    'pondicherry': 'puducherry',
-    'banaras': 'varanasi',
-    'benaras': 'varanasi',
-    'gauhati': 'guwahati',
-    'baroda': 'vadodara',
-    'poona': 'pune',
-    'cawnpore': 'kanpur',
-    'belgaum': 'belagavi',
-    'sholapur': 'solapur',
-    'simla': 'shimla',
-    'waltair': 'visakhapatnam'
-  };
+const { fuel, slug } = Astro.params;
 
-  if (!cities) return [];
-
-  const paths = [];
-
-  fuelTypes.forEach(fuel => {
-    // City paths
-    cities.filter(city => city.city_slug).forEach(city => {
-      paths.push({
-        params: { fuel, slug: city.city_slug },
-        props: { type: 'city', city, fuel },
-      });
-
-      // Add alias paths
-      Object.entries(CITY_ALIASES).forEach(([alias, target]) => {
-        if (city.city_slug === target) {
-          paths.push({
-            params: { fuel, slug: alias },
-            props: { type: 'city', city, fuel },
-          });
-        }
-      });
-    });
-
-    // State paths
-    const statesMap = new Map();
-    cities.forEach(c => {
-      if (c.state_slug && !statesMap.has(c.state_slug)) {
-        statesMap.set(c.state_slug, { name: c.state_name, slug: c.state_slug });
-      }
-    });
-
-    Array.from(statesMap.values()).forEach(state => {
-      paths.push({
-        params: { fuel, slug: state.slug },
-        props: { type: 'state', stateName: state.name, stateSlug: state.slug, fuel },
-      });
-    });
-  });
-
-  return paths;
+if (!fuel || !slug) {
+  return Astro.redirect('/404');
 }
 
-const { fuel, slug } = Astro.params;
-const { type, city, stateName, stateSlug } = Astro.props;
+const CITY_ALIASES = {
+  'bangalore': 'bengaluru',
+  'bombay': 'mumbai',
+  'madras': 'chennai',
+  'calcutta': 'kolkata',
+  'trivandrum': 'thiruvananthapuram',
+  'vizag': 'visakhapatnam',
+  'pondicherry': 'puducherry',
+  'banaras': 'varanasi',
+  'benaras': 'varanasi',
+  'gauhati': 'guwahati',
+  'baroda': 'vadodara',
+  'poona': 'pune',
+  'cawnpore': 'kanpur',
+  'belgaum': 'belagavi',
+  'sholapur': 'solapur',
+  'simla': 'shimla',
+  'waltair': 'visakhapatnam'
+};
+
+const targetSlug = CITY_ALIASES[slug] || slug;
+
+// Check if slug is a city
+const { data: city } = await supabase
+  .from('cities')
+  .select('*')
+  .eq('city_slug', targetSlug)
+  .single();
+
+let type = null;
+let stateName = null;
+let stateSlug = null;
+
+if (city) {
+  type = 'city';
+} else {
+  // Check if slug is a state
+  const { data: stateData } = await supabase
+    .from('cities')
+    .select('state_name, state_slug')
+    .eq('state_slug', slug)
+    .limit(1)
+    .single();
+
+  if (stateData) {
+    type = 'state';
+    stateName = stateData.state_name;
+    stateSlug = stateData.state_slug;
+  }
+}
+
+if (!type) {
+  return Astro.redirect('/404');
+}
+
 const today = new Date().toISOString().split('T')[0];
 
 const fuelLabel = fuel === 'autogas' ? 'AutoGas' : fuel === 'cng' ? 'CNG' : fuel.charAt(0).toUpperCase() + fuel.slice(1);

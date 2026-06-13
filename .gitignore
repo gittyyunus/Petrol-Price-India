@@ -1,5 +1,7 @@
 # build output
 dist/
+.wrangler/
+.agent/
 
 # generated types
 .astro/
