@@ -48,6 +48,17 @@ const {
 		<meta property="twitter:image" content={new URL('/favicon.svg', Astro.site || 'https://petrolpriceindia.com')} />
 		
 		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site || 'https://petrolpriceindia.com')} />
+		
+		<!-- Google tag (gtag.js) -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-QQLMPTHG7J" is:inline></script>
+		<script is:inline>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+
+		  gtag('config', 'G-QQLMPTHG7J');
+		</script>
+
 		<script is:inline>
 			const theme = (() => {
 				if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
