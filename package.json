@@ -11,8 +11,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "generate-types": "wrangler types",
-    "direct-deploy": "astro build && wrangler pages deploy dist",
-    "deploy": "git add . && git commit -m \"Update website\" && git push origin main"
+    "deploy": "git add . && git commit -m \"Update website\" && git push origin main && astro build && wrangler pages deploy dist"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.7.0",
