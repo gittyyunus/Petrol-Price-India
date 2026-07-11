@@ -9,11 +9,50 @@ const { data: cities } = await supabase.from('cities').select('id, city_name, ci
 const today = new Date().toISOString().split('T')[0];
 const { data: prices } = await supabase.from('prices').select('*').eq('date', today);
 
+const howToSchema = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Calculate Your Fuel Cost",
+  "description": "Estimate your trip fuel expenses based on current petrol prices in India.",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "position": 1,
+      "name": "Enter distance",
+      "text": "Enter the total distance of your trip in kilometers."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 2,
+      "name": "Enter vehicle mileage",
+      "text": "Enter your vehicle's mileage in kilometers per litre."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 3,
+      "name": "Select your city",
+      "text": "Choose your city from the dropdown to use the current local petrol price."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 4,
+      "name": "Get your estimate",
+      "text": "Your estimated fuel cost, fuel required, and the current petrol price are calculated instantly."
+    }
+  ],
+  "totalTime": "PT1M",
+  "tool": {
+    "@type": "HowToTool",
+    "name": "Petrol Price India Fuel Calculator"
+  }
+};
+
 const title = "Fuel Cost Calculator — Estimate Your Trip Expenses";
 const description = "Calculate your petrol expenses for any trip in India. Input distance, mileage, and select your city for accurate, real-time fuel cost estimation.";
 ---
 
 <Base title={title} description={description}>
+  <script type="application/ld+json" set:html={JSON.stringify(howToSchema)} />
   <Navbar />
   
   <main class="flex-1 bg-canvas-soft">

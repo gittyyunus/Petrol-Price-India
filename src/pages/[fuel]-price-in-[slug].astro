@@ -227,6 +227,45 @@ if (type === 'state') {
   maxPrice = sortedPrices[0];
   minPrice = sortedPrices[sortedPrices.length - 1];
 
+  faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `What is the average ${fuelLabel} price in ${stateName} today?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The average ${fuelLabel} price in ${stateName} today is ₹${avgPrice} per litre, based on ${prices?.length || 0} cities.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Which city has the cheapest ${fuelLabel} in ${stateName}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The cheapest ${fuelLabel} in ${stateName} today is ${minPrice?.city_name || 'N/A'} at ₹${minPrice?.[priceKey]?.toFixed(2) || 'N/A'} per litre.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Which city has the highest ${fuelLabel} price in ${stateName}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `The highest ${fuelLabel} price in ${stateName} today is in ${maxPrice?.city_name || 'N/A'} at ₹${maxPrice?.[priceKey]?.toFixed(2) || 'N/A'} per litre.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Why do ${fuel} prices vary across cities in ${stateName}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Fuel prices vary across ${stateName} due to differences in local dealer commissions, transportation costs from depots, and municipal taxes or surcharges in each district.`
+        }
+      }
+    ]
+  };
+
   title = `${fuelLabel} Price in ${stateName} Today — Cities, Trends & Comparison`;
   description = `Check ${fuel} prices in all cities of ${stateName}. Find the cheapest city, state average, and daily price changes for ${stateName}. Updated for ${formatDate(today)}.`;
 
@@ -249,7 +288,8 @@ if (type === 'state') {
             "item": `https://petrolpriceindia.com/${fuel}-price-in-${stateSlug}`
           }
         ]
-      }
+      },
+      faqSchema
     ]
   };
 }
