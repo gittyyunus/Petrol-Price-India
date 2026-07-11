@@ -38,14 +38,16 @@ const {
 		<meta property="og:url" content={new URL(Astro.url.pathname, Astro.site || 'https://petrolpriceindia.com')} />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
-		<meta property="og:image" content={new URL('/favicon.svg', Astro.site || 'https://petrolpriceindia.com')} />
+		<meta property="og:image" content={new URL('/og-image.svg', Astro.site || 'https://petrolpriceindia.com')} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
 
 		<!-- Twitter -->
 		<meta property="twitter:card" content="summary_large_image" />
 		<meta property="twitter:url" content={new URL(Astro.url.pathname, Astro.site || 'https://petrolpriceindia.com')} />
 		<meta property="twitter:title" content={title} />
 		<meta property="twitter:description" content={description} />
-		<meta property="twitter:image" content={new URL('/favicon.svg', Astro.site || 'https://petrolpriceindia.com')} />
+		<meta property="twitter:image" content={new URL('/og-image.svg', Astro.site || 'https://petrolpriceindia.com')} />
 		
 		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site || 'https://petrolpriceindia.com')} />
 		

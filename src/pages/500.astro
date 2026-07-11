@@ -8,6 +8,8 @@ interface Props {
   error: unknown;
 }
 
+Astro.response.status = 500;
+
 const { error } = Astro.props;
 
 // Log error to server-side console (optional, depending on your logging setup)

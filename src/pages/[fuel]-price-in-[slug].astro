@@ -10,7 +10,7 @@ import { Share2, Info, ChevronRight, MapPin, ArrowUpDown } from '@lucide/astro';
 const { fuel, slug } = Astro.params;
 
 if (!fuel || !slug) {
-  return Astro.redirect('/404');
+  Astro.response.status = 404;
 }
 
 const CITY_ALIASES = {
@@ -65,7 +65,7 @@ if (city) {
 }
 
 if (!type) {
-  return Astro.redirect('/404');
+  Astro.response.status = 404;
 }
 
 const today = new Date().toISOString().split('T')[0];
@@ -435,6 +435,22 @@ if (type === 'state') {
             }
           </script>
         </>
+      )}
+
+      {/* Not Found */}
+      {!type && (
+        <div class="flex items-center justify-center py-20 px-4">
+          <div class="max-w-md w-full text-center">
+            <h1 class="text-[12rem] font-bold leading-none text-ink/5 select-none">404</h1>
+            <h2 class="text-3xl font-bold mb-4">City or state not found</h2>
+            <p class="text-body mb-10 text-lg">
+              We couldn't find fuel price data for "{slug}". It might be misspelled or not yet in our database.
+            </p>
+            <a href="/all-cities" class="inline-flex items-center justify-center gap-2 bg-ink text-canvas px-8 py-3 rounded-xl font-semibold hover:opacity-90 transition-all">
+              Browse All Cities
+            </a>
+          </div>
+        </div>
       )}
 
       {/* State View */}

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f5f5f5"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" rx="0"/>
+
+  <!-- Accent bar at top -->
+  <rect width="1200" height="6" fill="#171717"/>
+
+  <!-- Decorative circle (subtle) -->
+  <circle cx="1050" cy="100" r="250" fill="#171717" opacity="0.03"/>
+  <circle cx="150" cy="500" r="180" fill="#22c55e" opacity="0.04"/>
+
+  <!-- Fuel pump icon (simplified SVG) -->
+  <g transform="translate(100, 160)" fill="#171717">
+    <!-- Nozzle -->
+    <rect x="42" y="8" width="10" height="40" rx="3"/>
+    <rect x="38" y="44" width="18" height="8" rx="2"/>
+    <!-- Hose -->
+    <path d="M47 8 Q47 -8 64 -8 Q88 -8 88 16 L88 100" stroke="#171717" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <!-- Pump body -->
+    <rect x="60" y="100" width="40" height="100" rx="8"/>
+    <!-- Display screen -->
+    <rect x="68" y="112" width="24" height="16" rx="3" fill="#22c55e" opacity="0.2"/>
+    <!-- Base -->
+    <rect x="56" y="200" width="48" height="12" rx="4"/>
+  </g>
+
+  <!-- Fuel drop icon -->
+  <g transform="translate(115, 300)">
+    <path d="M15 0 Q30 20 30 35 C30 48 20 55 15 55 C10 55 0 48 0 35 Q0 20 15 0Z" fill="#22c55e" opacity="0.15"/>
+    <path d="M15 8 Q26 24 26 35 C26 45 19 50 15 50 C11 50 4 45 4 35 Q4 24 15 8Z" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.3"/>
+  </g>
+
+  <!-- Main heading -->
+  <text x="200" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="700" fill="#171717" letter-spacing="-1">Petrol Price</text>
+  <text x="200" y="285" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="700" fill="#171717" letter-spacing="-1">India</text>
+
+  <!-- Tagline -->
+  <text x="200" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="400" fill="#4d4d4d" letter-spacing="-0.2">
+    Daily fuel prices for every city in India
+  </text>
+
+  <!-- Key features row -->
+  <g transform="translate(200, 390)">
+    <!-- Real-time -->
+    <rect x="0" y="0" width="160" height="36" rx="18" fill="#22c55e" opacity="0.1"/>
+    <text x="80" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#22c55e" text-anchor="middle">Real-time Prices</text>
+
+    <!-- Chart -->
+    <rect x="180" y="0" width="160" height="36" rx="18" fill="#171717" opacity="0.06"/>
+    <text x="260" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#171717" text-anchor="middle">Price History</text>
+
+    <!-- Calculator -->
+    <rect x="360" y="0" width="160" height="36" rx="18" fill="#171717" opacity="0.06"/>
+    <text x="440" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#171717" text-anchor="middle">Cost Calculator</text>
+  </g>
+
+  <!-- URL at bottom -->
+  <text x="1200" y="580" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="500" fill="#888888" text-anchor="end" letter-spacing="0.5">petrolpriceindia.com</text>
+
+  <!-- Bottom accent -->
+  <rect x="0" y="624" width="1200" height="6" fill="#22c55e"/>
+</svg>
