@@ -51,6 +51,38 @@ const {
 		
 		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site || 'https://petrolpriceindia.com')} />
 		
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "Organization",
+				"name": "Petrol Price India",
+				"url": "https://petrolpriceindia.com",
+				"logo": "https://petrolpriceindia.com/favicon.svg",
+				"description": "Track daily petrol prices in India. Real-time updates, price history charts, and fuel cost calculator for all major cities and states.",
+				"contactPoint": {
+					"@type": "ContactPoint",
+					"email": "support@petrolpriceindia.com",
+					"contactType": "customer support"
+				}
+			}
+		</script>
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "WebSite",
+				"name": "Petrol Price India",
+				"url": "https://petrolpriceindia.com",
+				"potentialAction": {
+					"@type": "SearchAction",
+					"target": {
+						"@type": "EntryPoint",
+						"urlTemplate": "https://petrolpriceindia.com/all-cities?q={search_term_string}"
+					},
+					"query-input": "required name=search_term_string"
+				}
+			}
+		</script>
+		
 		<!-- Google tag (gtag.js) -->
 		<script async src="https://www.googletagmanager.com/gtag/js?id=G-QQLMPTHG7J" is:inline></script>
 		<script is:inline>

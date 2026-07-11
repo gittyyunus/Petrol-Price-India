@@ -66,80 +66,110 @@ const lastUpdatedTime = mumbaiPrice ? new Date(mumbaiPrice.scraped_at).toLocaleT
 const title = "Fuel Prices India — Today's Fuel Prices in Delhi, Mumbai, Bangalore";
 const description = "Track fuel prices today in India. Get real-time updates for fuel prices in delhi, mumbai, bangalore, hyderabad, pune and 511 cities. Daily fuel price tracking and history.";
 
-const homepageFaqSchema = {
+const faqEntity = [
+  {
+    "@type": "Question",
+    "name": "Why does the petrol price change every day in India?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "In India, fuel prices are revised daily at 6:00 AM IST under the 'Dynamic Fuel Pricing' mechanism. This system ensures that fluctuations in international crude oil prices and the USD-INR exchange rate are passed on to consumers immediately."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "Is petrol price going up in India?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Petrol prices in India fluctuate daily based on global crude oil benchmarks and the strength of the Rupee. Recently, trends have shown volatility due to geopolitical factors and global supply chain shifts."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "Will petrol price increase in the coming days?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Future petrol price increases depend on OPEC production cuts, international demand, and domestic taxation policies. It is recommended to track the daily 6:00 AM updates for the most accurate forecast."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "Why is petrol price high in India?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "The high cost of petrol in India is primarily due to heavy taxation, including Central Excise Duty and State Value Added Tax (VAT), which can make up nearly 50% of the final retail price."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the current petrol price in Delhi?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `As of today, the petrol price in Delhi is ₹${delhiPrice?.petrol_price?.toFixed(2) || 'XX.XX'} per litre.`
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in Bangalore today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `Today's petrol price in Bangalore is ₹${bangalorePrice?.petrol_price?.toFixed(2) || 'XX.XX'} per litre.`
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the rate of 1 litre of petrol in India?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `The rate of 1 litre of petrol varies by city, typically ranging between ₹95 to ₹110 across major Indian metros depending on local VAT rates.`
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What's the price of petrol in India now?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `The current price of petrol in India is determined by Oil Marketing Companies and varies by location. Major cities like Mumbai and Hyderabad often see the highest rates due to state taxes.`
+    }
+  }
+];
+
+const homepageSchema = {
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
+  "@graph": [
     {
-      "@type": "Question",
-      "name": "Why does the petrol price change every day in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "In India, fuel prices are revised daily at 6:00 AM IST under the 'Dynamic Fuel Pricing' mechanism. This system ensures that fluctuations in international crude oil prices and the USD-INR exchange rate are passed on to consumers immediately."
+      "@type": "Article",
+      "headline": title,
+      "description": description,
+      "author": { "@type": "Organization", "name": "Petrol Price India" },
+      "publisher": { "@type": "Organization", "name": "Petrol Price India" },
+      "datePublished": "2025-01-01",
+      "dateModified": today,
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://petrolpriceindia.com"
+      },
+      "hasPart": {
+        "@type": "FAQPage",
+        "mainEntity": faqEntity
       }
     },
     {
-      "@type": "Question",
-      "name": "Is petrol price going up in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Petrol prices in India fluctuate daily based on global crude oil benchmarks and the strength of the Rupee. Recently, trends have shown volatility due to geopolitical factors and global supply chain shifts."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Will petrol price increase in the coming days?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Future petrol price increases depend on OPEC production cuts, international demand, and domestic taxation policies. It is recommended to track the daily 6:00 AM updates for the most accurate forecast."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Why is petrol price high in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "The high cost of petrol in India is primarily due to heavy taxation, including Central Excise Duty and State Value Added Tax (VAT), which can make up nearly 50% of the final retail price."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What is the current petrol price in Delhi?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `As of today, the petrol price in Delhi is ₹${delhiPrice?.petrol_price?.toFixed(2) || 'XX.XX'} per litre.`
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What is the petrol price in Bangalore today?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `Today's petrol price in Bangalore is ₹${bangalorePrice?.petrol_price?.toFixed(2) || 'XX.XX'} per litre.`
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What is the rate of 1 litre of petrol in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `The rate of 1 litre of petrol varies by city, typically ranging between ₹95 to ₹110 across major Indian metros depending on local VAT rates.`
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What's the price of petrol in India now?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `The current price of petrol in India is determined by Oil Marketing Companies and varies by location. Major cities like Mumbai and Hyderabad often see the highest rates due to state taxes.`
-      }
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://petrolpriceindia.com"
+        }
+      ]
     }
   ]
 };
 ---
 
 <Base title={title} description={description}>
-  {homepageFaqSchema && <script type="application/ld+json" set:html={JSON.stringify(homepageFaqSchema)} />}
+  {homepageSchema && <script type="application/ld+json" set:html={JSON.stringify(homepageSchema)} />}
   <Navbar />
   
   <main class="flex-1">

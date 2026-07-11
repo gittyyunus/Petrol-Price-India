@@ -77,6 +77,7 @@ const changeKey = fuel === 'petrol' ? 'price_change' : `${fuel}_change`;
 let title = "";
 let description = "";
 let faqSchema = null;
+let pageSchema = null;
 
 // --- City Logic ---
 let latestPrice, yesterdayPrice, priceHistory, nearbyPrices, nearbyCitiesList;
@@ -155,6 +156,48 @@ if (type === 'city') {
       }
     ]
   };
+
+  pageSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": title,
+        "description": description,
+        "author": { "@type": "Organization", "name": "Petrol Price India" },
+        "publisher": { "@type": "Organization", "name": "Petrol Price India" },
+        "datePublished": today,
+        "dateModified": today,
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": `https://petrolpriceindia.com/${fuel}-price-in-${city.city_slug}`
+        },
+        "hasPart": faqSchema
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://petrolpriceindia.com"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": city.state_name,
+            "item": `https://petrolpriceindia.com/${fuel}-price-in-${city.state_slug}`
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": city.city_name
+          }
+        ]
+      }
+    ]
+  };
 }
 
 // --- State Logic ---
@@ -186,6 +229,29 @@ if (type === 'state') {
 
   title = `${fuelLabel} Price in ${stateName} Today — Cities, Trends & Comparison`;
   description = `Check ${fuel} prices in all cities of ${stateName}. Find the cheapest city, state average, and daily price changes for ${stateName}. Updated for ${formatDate(today)}.`;
+
+  pageSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://petrolpriceindia.com"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": stateName,
+            "item": `https://petrolpriceindia.com/${fuel}-price-in-${stateSlug}`
+          }
+        ]
+      }
+    ]
+  };
 }
 ---
 
@@ -501,5 +567,5 @@ if (type === 'state') {
   </main>
   
   <Footer />
-  {faqSchema && <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />}
+  {pageSchema && <script type="application/ld+json" set:html={JSON.stringify(pageSchema)} />}
 </Base>
