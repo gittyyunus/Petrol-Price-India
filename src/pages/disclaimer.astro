@@ -1,0 +1,68 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Base 
+  title="Disclaimer | Petrol Price India" 
+  description="Disclaimer for Petrol Price India. Read about our fuel price data sourcing, daily dynamic pricing changes, and data liability limitations."
+>
+  <Navbar />
+  
+  <main class="flex-grow">
+    <div class="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+      <div class="mb-12">
+        <h1 class="text-4xl font-bold tracking-tight text-ink mb-4">Disclaimer</h1>
+        <p class="text-mute">Last Updated: June 2026</p>
+      </div>
+
+      <div class="prose prose-slate max-w-none dark:prose-invert space-y-8">
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">1. General Information</h2>
+          <p>
+            The information provided on <a href="/" class="text-primary hover:underline font-semibold">petrolpriceindia.com</a> is for general informational and educational purposes only. All fuel price data, comparisons, and calculators on the website are provided in good faith, however, we make no representation or warranty of any kind, express or implied, regarding the accuracy, adequacy, validity, reliability, availability, or completeness of any data on the site.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">2. Fuel Price Fluctuations & Sourcing</h2>
+          <p class="mb-4">
+            Fuel prices in India (Petrol, Diesel, CNG, AutoGas) are subject to change on a daily basis (revised every morning at 6:00 AM IST) under the dynamic fuel pricing mechanism. While we fetch these rates daily from public records and Oil Marketing Companies (OMCs) like IOCL, HPCL, and BPCL, discrepancies can occur due to:
+          </p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>Dealer-specific margins and local fuel station commission differences.</li>
+            <li>Octroi, local municipal levies, VAT calculations, and regional transport surcharges.</li>
+            <li>Delays in public data feed synchronization.</li>
+          </ul>
+          <p class="mt-4">
+            We highly recommend verifying the final price at your local retail outlet before refuelling or making any purchasing decisions.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">3. Professional & Financial Disclaimer</h2>
+          <p>
+            The site does not contain financial, commercial, or logistical advice. Any calculations made using our trip fuel estimators or comparison tools are estimates only. We will not be held liable for any decisions, financial planning errors, fuel budgeting differences, or business losses incurred by individuals or fleets relying on our calculations or price history data.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">4. External Links Disclaimer</h2>
+          <p>
+            Our website may contain links to external websites that are not provided or maintained by or in any way affiliated with us. Please note that we do not guarantee the accuracy, relevance, timeliness, or completeness of any information on these external websites.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">5. Contact Us</h2>
+          <p>
+            If you require any more information or have any questions about our site's disclaimer, please feel free to contact us by email at <a href="mailto:support@petrolpriceindia.com" class="text-primary hover:underline font-medium">support@petrolpriceindia.com</a>.
+          </p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
