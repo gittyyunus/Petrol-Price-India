@@ -28,7 +28,15 @@ import Footer from '../components/Footer.astro';
         <section>
           <h2 class="text-2xl font-semibold mb-4">2. Fuel Price Fluctuations & Sourcing</h2>
           <p class="mb-4">
-            Fuel prices in India (Petrol, Diesel, CNG, AutoGas) are subject to change on a daily basis (revised every morning at 6:00 AM IST) under the dynamic fuel pricing mechanism. We scrape and fetch these prices from the mypetrolprice.com website, and discrepancies can occur due to:
+            All daily fuel prices in India originate from the public data declared by the major state-owned Oil Marketing Companies (OMCs):
+          </p>
+          <ul class="list-disc pl-6 space-y-2 mb-4">
+            <li>Indian Oil Corporation Limited (IOCL)</li>
+            <li>Bharat Petroleum Corporation Limited (BPCL)</li>
+            <li>Hindustan Petroleum Corporation Limited (HPCL)</li>
+          </ul>
+          <p>
+            While prices can change daily (revised every morning at 6:00 AM IST) under the dynamic fuel pricing mechanism, discrepancies can occur due to:
           </p>
           <ul class="list-disc pl-6 space-y-2">
             <li>Dealer-specific margins and local fuel station commission differences.</li>

@@ -6,42 +6,63 @@ import Footer from '../components/Footer.astro';
 
 <Base 
   title="About Us | Petrol Price India" 
-  description="Learn about Petrol Price India, our mission to provide accurate and real-time fuel prices across India, and how we help consumers make informed decisions."
+  description="Learn about Petrol Price India, the story of its solo creator, our mission to provide transparent and real-time fuel prices across India, and how we retrieve our data."
 >
   <Navbar />
   
-  <main class="flex-grow">
+  <main class="flex-grow bg-canvas-soft">
     <div class="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-      <div class="text-center mb-12">
+      <div class="text-center mb-16">
         <h1 class="text-4xl font-bold tracking-tight text-ink sm:text-5xl mb-4">About Us</h1>
-        <p class="text-lg text-body">Empowering Indian consumers with real-time fuel price transparency.</p>
+        <p class="text-lg text-body max-w-2xl mx-auto">The story of a solo developer building a minimal, fast, and transparent fuel tracking platform for India.</p>
       </div>
 
-      <div class="prose prose-slate max-w-none dark:prose-invert">
-        <section class="mb-12">
-          <h2 class="text-2xl font-semibold mb-4">Our Mission</h2>
+      <div class="prose prose-slate max-w-none dark:prose-invert space-y-12">
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">The Story Behind Petrol Price India</h2>
           <p class="mb-4">
-            At Petrol Price India, we believe that transparency is key to a fair market. Fuel prices in India change daily, and keeping track of these changes can be challenging for the average consumer. Our mission is to provide accurate, real-time, and easy-to-access fuel price data for over 511 cities across India.
+            Hello! My name is Yunus, and I am the independent software developer, designer, and sole creator of <strong>Petrol Price India</strong>. 
+          </p>
+          <p class="mb-4">
+            The idea for this website came from a simple personal frustration. Under India's "Dynamic Fuel Pricing" model introduced in 2017, petrol and diesel rates are revised every single morning at 6:00 AM. Since fuel prices vary drastically between states, districts, and municipalities due to localized value-added tax (VAT) and dealer margins, I found it incredibly difficult to find a clean, fast, and lightweight dashboard to compare rates or estimate road trip expenses.
           </p>
           <p>
-            By providing this data along with historical trends and analytical tools, we empower motorists, businesses, and daily commuters to make smarter decisions about their fuel consumption and budgeting.
+            Most existing fuel rate portals were cluttered with heavy banner scripts, slow loading speeds, and intrusive ads. As a developer, I saw an opportunity to build a better utility. I designed Petrol Price India to be a modern, minimal, and highly interactive tracking tool built on serverless architecture (Astro, Supabase, and Cloudflare) to deliver real-time data under 100 milliseconds.
           </p>
         </section>
 
-        <section class="mb-12">
-          <h2 class="text-2xl font-semibold mb-4">What We Offer</h2>
-          <ul class="list-disc pl-6 space-y-2">
-            <li><strong>Daily Price Updates:</strong> Real-time tracking of petrol and diesel prices as they are revised every morning.</li>
-            <li><strong>State-wide Coverage:</strong> From major metros like Mumbai and Delhi to smaller towns, we cover the length and breadth of the country.</li>
-            <li><strong>Price Analytics:</strong> View historical charts to understand price trends over weeks, months, or years.</li>
-            <li><strong>Smart Tools:</strong> Use our fuel cost calculator and city comparison tools to plan your trips and manage expenses.</li>
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">How the Data is Sourced & Maintained</h2>
+          <p class="mb-4">
+            Because this is a solo project, automation and data accuracy are vital. The website relies on an automated daily ingestion script that runs every morning after the pricing revision. Here is how the pipeline operates:
+          </p>
+          <ul class="list-disc pl-6 space-y-3 mb-4">
+            <li><strong>OMC Sourcing:</strong> The script references public notifications and retail updates declared daily by India's primary state-owned Oil Marketing Companies (OMCs), including Indian Oil Corporation Limited (IOCL), Hindustan Petroleum Corporation Limited (HPCL), and Bharat Petroleum Corporation Limited (BPCL).</li>
+            <li><strong>Database Ingestion:</strong> The fetched rates are systematically parsed and stored in a secure database hosted on Supabase, tracking daily fluctuations for over 511 cities and districts across all Indian states.</li>
+            <li><strong>Cloudflare Caching & Delivery:</strong> The frontend is compiled and updated via serverless edge workers, providing users with instant, real-time charts and comparison metrics.</li>
+          </ul>
+          <p>
+            Please note that individual dealer margins, logistics distances from nearby supply depots, and state surcharges can cause minor variations at specific retail pumps. Users should check with local retail bunks for final billing rates.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">Our Core Values</h2>
+          <ul class="list-disc pl-6 space-y-3">
+            <li><strong>Commitment to Speed:</strong> Built using modern static-first tools to load instantly on slow mobile connections.</li>
+            <li><strong>Transparency:</strong> Clearly displaying daily increases or decreases so commuters can plan refills.</li>
+            <li><strong>User Utility:</strong> Building interactive features like the fuel cost calculator and city-to-city comparator tools instead of just plain spreadsheets.</li>
+            <li><strong>Direct Support:</strong> If you spot a pricing discrepancy or have feedback, you can reach out directly to me. I actively monitor feedback and run manual corrections when needed.</li>
           </ul>
         </section>
 
-        <section class="mb-12">
-          <h2 class="text-2xl font-semibold mb-4">Our Data</h2>
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">Support the Project</h2>
           <p>
-            We source our data from reliable public records and official oil marketing company (OMC) updates. While we strive for 100% accuracy, prices may vary slightly at individual retail outlets due to local levies and transportation costs. We always recommend checking with your local fuel station for the final price.
+            Running a dynamic data website as a solo creator involves database costs, hosting fees, and continuous maintenance. To keep this platform free and accessible to all commuters, we display highly vetted, non-intrusive advertisements from certified networks.
+          </p>
+          <p>
+            If you have questions, partnership inquiries, or suggestions to improve the calculator or alerts systems, please contact me through the <a href="/contact" class="text-primary hover:underline font-semibold">Contact Us</a> page or email me directly at <a href="mailto:support@petrolpriceindia.com" class="text-primary hover:underline font-medium">support@petrolpriceindia.com</a>. Thank you for using Petrol Price India!
           </p>
         </section>
       </div>

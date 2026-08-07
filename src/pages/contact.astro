@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
-import { Mail, MapPin, MessageSquare } from '@lucide/astro';
+import { Mail } from '@lucide/astro';
 ---
 
 <Base 
@@ -15,7 +15,7 @@ import { Mail, MapPin, MessageSquare } from '@lucide/astro';
     <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <div class="text-center mb-16">
         <h1 class="text-4xl font-bold tracking-tight text-ink sm:text-5xl mb-4">Contact Us</h1>
-        <p class="text-lg text-body max-w-2xl mx-auto">Have questions or feedback? We'd love to hear from you. Our team is dedicated to providing the best fuel tracking experience.</p>
+        <p class="text-lg text-body max-w-2xl mx-auto">Have questions or feedback? I'd love to hear from you.</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
@@ -23,7 +23,9 @@ import { Mail, MapPin, MessageSquare } from '@lucide/astro';
         <div class="space-y-8">
           <div>
             <h2 class="text-2xl font-semibold mb-6">Get in Touch</h2>
-            <p class="text-body mb-8">Feel free to reach out through any of these channels. We aim to respond to all inquiries within 24-48 hours.</p>
+            <p class="text-body mb-8">
+              As a solo developer running this platform, I personally read and respond to all feedback, bug reports, and data inquiries. I aim to get back to all messages within 24-48 hours.
+            </p>
           </div>
 
           <div class="space-y-6">
@@ -32,33 +34,13 @@ import { Mail, MapPin, MessageSquare } from '@lucide/astro';
                 <Mail class="h-6 w-6" />
               </div>
               <div>
-                <h3 class="font-medium text-ink">Email</h3>
-                <p class="text-body text-sm">support@petrolpriceindia.com</p>
-                <p class="text-mute text-xs mt-1">For general inquiries and support</p>
+                <h3 class="font-medium text-ink">Email Support</h3>
+                <p class="text-body text-sm">yunusshabbir53@gmail.com</p>
+                <p class="text-mute text-xs mt-1">For developer inquiries, data feedback, or corrections</p>
               </div>
             </div>
 
-            <div class="flex items-start gap-4">
-              <div class="p-3 bg-canvas-soft rounded-lg text-ink">
-                <MessageSquare class="h-6 w-6" />
-              </div>
-              <div>
-                <h3 class="font-medium text-ink">Feedback</h3>
-                <p class="text-body text-sm">feedback@petrolpriceindia.com</p>
-                <p class="text-mute text-xs mt-1">Help us improve our platform</p>
-              </div>
             </div>
-
-            <div class="flex items-start gap-4">
-              <div class="p-3 bg-canvas-soft rounded-lg text-ink">
-                <MapPin class="h-6 w-6" />
-              </div>
-              <div>
-                <h3 class="font-medium text-ink">Location</h3>
-                <p class="text-body text-sm">Mumbai, Maharashtra, India</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Contact Form -->

@@ -1,0 +1,54 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+
+const posts = (await getCollection('blog'))
+  .filter(p => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const title = "Blog — Petrol Price India";
+const description = "In-depth articles on how Indian fuel prices work — excise duty, state VAT, dealer margins, and the math behind what you pay at the pump.";
+---
+
+<Base title={title} description={description}>
+  <Navbar />
+
+  <main class="flex-1 bg-canvas-soft">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
+      <header class="mb-16">
+        <h1 class="text-4xl font-bold tracking-tight text-ink sm:text-5xl mb-4">Blog</h1>
+        <p class="text-lg text-body max-w-2xl">
+          Real breakdowns of how fuel pricing works in India — the taxes, the math, and what you actually pay for.
+        </p>
+      </header>
+
+      <div class="space-y-8">
+        {
+          posts.map(post => (
+            <article class="bg-canvas border border-hairline rounded-lg p-6 hover:shadow-md transition-shadow">
+              <div class="flex items-center gap-3 mb-3">
+                <span class="text-xs text-mute">{post.data.pubDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                <span class="text-xs px-2 py-1 bg-canvas-soft-2 text-body rounded-full">{post.data.category}</span>
+              </div>
+              <h2 class="text-xl font-bold text-ink mb-2">
+                <a href={`/blog/${post.id}`} class="hover:text-primary transition-colors">{post.data.title}</a>
+              </h2>
+              <p class="text-body leading-relaxed">{post.data.description}</p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                {
+                  post.data.tags.map(tag => (
+                    <span class="text-xs text-mute">#{tag}</span>
+                  ))
+                }
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
