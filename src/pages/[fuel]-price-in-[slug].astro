@@ -79,6 +79,7 @@ let title = "";
 let description = "";
 let faqSchema = null;
 let pageSchema = null;
+let cityInsights = [];
 
 // --- City Logic ---
 let latestPrice, yesterdayPrice, priceHistory, nearbyPrices, nearbyCitiesList;
@@ -111,7 +112,7 @@ if (type === 'city') {
   title = `${fuelLabel} Price in ${city.city_name} Today (${formatDate(today)}) — ₹${latestPrice?.[priceKey] || 'XX.XX'}/Litre`;
   description = `Today's ${fuel} price in ${city.city_name} is ₹${latestPrice?.[priceKey] || 'XX.XX'} per litre (${(latestPrice?.[changeKey] || 0) >= 0 ? '+' : ''}${latestPrice?.[changeKey] || '0.00'} from yesterday). Check 30-day price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}.`;
 
-  const cityInsights = buildCityInsights({
+  cityInsights = buildCityInsights({
     cityName: city.city_name,
     stateName: city.state_name,
     fuel,
