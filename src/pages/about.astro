@@ -2,6 +2,12 @@
 import Base from '../layouts/Base.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import { supabase } from '../lib/supabase';
+
+const { count } = await supabase
+  .from('cities')
+  .select('*', { count: 'exact', head: true });
+const cityCount = count ?? 505;
 ---
 
 <Base 
@@ -38,7 +44,7 @@ import Footer from '../components/Footer.astro';
           </p>
           <ul class="list-disc pl-6 space-y-3 mb-4">
             <li><strong>OMC Sourcing:</strong> The script references public notifications and retail updates declared daily by India's primary state-owned Oil Marketing Companies (OMCs), including Indian Oil Corporation Limited (IOCL), Hindustan Petroleum Corporation Limited (HPCL), and Bharat Petroleum Corporation Limited (BPCL).</li>
-            <li><strong>Database Ingestion:</strong> The fetched rates are systematically parsed and stored in a secure database hosted on Supabase, tracking daily fluctuations for over 511 cities and districts across all Indian states.</li>
+            <li><strong>Database Ingestion:</strong> The fetched rates are systematically parsed and stored in a secure database hosted on Supabase, tracking daily fluctuations for over {cityCount} cities and districts across all Indian states.</li>
             <li><strong>Cloudflare Caching & Delivery:</strong> The frontend is compiled and updated via serverless edge workers, providing users with instant, real-time charts and comparison metrics.</li>
           </ul>
           <p>
