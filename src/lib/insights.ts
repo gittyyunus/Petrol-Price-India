@@ -134,18 +134,30 @@ function aboutSection(ctx: InsightContext): InsightSection {
 
   if (hist) {
     const span = hist.high - hist.low;
-    if (span >= 0.05) {
+    if (span < 0.01) {
       paragraphs.push(
-        `Over the last 30 days it has ranged between ${inr(hist.low)} and ${inr(hist.high)} ${ctx.unitLabel}, a spread of ${inr(span)} — wide enough that the timing of a full tank matters.`,
+        pick(
+          [
+            `The same rate has held for the entire 30-day window — nothing has moved.`,
+            `It has stayed pinned at today's price throughout the past month.`,
+            `The price has not moved once in the last 30 days; today's rate is exactly where the month started.`,
+          ],
+          seedFor(ctx.cityName.toLowerCase(), ctx.fuel),
+          4,
+        ),
+      );
+    } else if (span < 0.05) {
+      paragraphs.push(
+        `Over the past month it has barely moved, shifting only a few paise around ${inr(price)} ${ctx.unitLabel}.`,
       );
     } else {
       paragraphs.push(
-        `The 30-day picture in ${ctx.cityName} has been stable, holding between ${inr(hist.low)} and ${inr(hist.high)} ${ctx.unitLabel} throughout.`,
+        `Over the last 30 days it has ranged between ${inr(hist.low)} and ${inr(hist.high)} ${ctx.unitLabel}, a spread of ${inr(span)} — wide enough that the timing of a full tank genuinely matters.`,
       );
     }
   } else {
     paragraphs.push(
-      `We only publish figures we've actually recorded, so a limited history here simply means ${ctx.cityName} has been tracked for a shorter window.`,
+      `We only publish figures we've actually recorded, so a short history here simply means ${ctx.cityName} has been tracked for a shorter window.`,
     );
   }
 
@@ -188,7 +200,7 @@ function nearbySection(ctx: InsightContext): InsightSection {
 
   if (priced.length > 1 && ctx.cityName !== priciest.city) {
     paragraphs.push(
-      `Meanwhile ${priciest.city} sits at the firmer end of the local range at ${inr(priciest.p)} ${ctx.unitLabel}, which tends to reflect differences in depot distance and small local levies rather than any single cause.`,
+      `On the other end, ${priciest.city} is the highest-priced of the nearby cities at ${inr(priciest.p)} ${ctx.unitLabel} — usually a reflection of depot distance and small local levies rather than any single cause.`,
     );
   }
 
@@ -212,19 +224,29 @@ function trendSection(ctx: InsightContext): InsightSection {
   const span = hist.high - hist.low;
   const pct = price > 0 ? (span / price) * 100 : 0;
 
-  if (pct < 1) {
+  if (span === 0) {
     paragraphs.push(
-      `Over the last 30 days, ${ctx.fuelLabel} in ${ctx.cityName} barely blinked — the gap between its highest and lowest print was about ${inr(span)}, under 1% of the current ${inr(price)} ${ctx.unitLabel} level.`,
+      `${ctx.fuelLabel} in ${ctx.cityName} has not moved at all in the past 30 days, holding at ${inr(price)} ${ctx.unitLabel} the entire window.`,
     );
     paragraphs.push(
-      `A range that tight usually means local supply and taxes are steady; there's little vintage in trying to time it.`,
+      `A completely flat month usually signals steady supply and stable taxes — there is simply no movement to track.`,
+    );
+    return { heading: `The 30-Day Picture in ${ctx.cityName}`, paragraphs };
+  }
+
+  if (pct < 1) {
+    paragraphs.push(
+      `Over the last 30 days, ${ctx.fuelLabel} in ${ctx.cityName} barely moved — the gap between its highest and lowest print was about ${inr(span)}, under 1% of the current ${inr(price)} ${ctx.unitLabel} level.`,
+    );
+    paragraphs.push(
+      `A range that tight usually means supply and taxes are steady, so there's little point in timing your fill-up.`,
     );
   } else {
     paragraphs.push(
       `${ctx.fuelLabel} in ${ctx.cityName} swung between ${inr(hist.low)} and ${inr(hist.high)} ${ctx.unitLabel} in the past month — a ${inr(span)} gap, or around ${pct.toFixed(1)}% off the present ${inr(price)} mark.`,
     );
     paragraphs.push(
-      `When this range is kicking around, the daily 6 AM revision page is worth checking before you commit to a tank.`,
+      `When that window is moving around, checking the daily 6 AM revision before you commit to a tank makes sense.`,
     );
   }
 
