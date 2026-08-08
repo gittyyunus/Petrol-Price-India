@@ -8,11 +8,42 @@ import sitemap from '@astrojs/sitemap';
 import cloudflare from '@astrojs/cloudflare';
 
 import { createClient } from '@supabase/supabase-js';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 try {
   process.loadEnvFile();
 } catch {
   // .env file may not exist in production (secrets injected by Cloudflare)
+}
+
+// Read blog post slugs directly from the content directory so SSR blog routes
+// (`/blog/[slug]`) are included in the sitemap, since Astro's sitemap
+// integration only auto-includes statically generated pages.
+function getBlogUrls() {
+  const blogDir = join(process.cwd(), 'src/content/blog');
+  const site = 'https://petrolpriceindia.com';
+  const urls = [];
+
+  try {
+    const files = readdirSync(blogDir).filter((f) => f.endsWith('.md'));
+
+    for (const file of files) {
+      const raw = readFileSync(join(blogDir, file), 'utf8');
+      const draftMatch = raw.match(/^\s*draft\s*:\s*true\s*$/m);
+      if (draftMatch) continue;
+
+      const slug = file.replace(/\.md$/, '');
+      urls.push(`${site}/blog/${slug}/`);
+    }
+
+    urls.sort();
+    console.log(`Generated ${urls.length} blog sitemap URLs`);
+  } catch (error) {
+    console.warn('Failed to generate blog sitemap URLs:', error.message);
+  }
+
+  return urls;
 }
 
 async function getDynamicUrls() {
@@ -68,7 +99,7 @@ async function getDynamicUrls() {
   }
 }
 
-const dynamicUrls = await getDynamicUrls();
+const dynamicUrls = [...(await getDynamicUrls()), ...getBlogUrls()];
 
 // https://astro.build/config
 export default defineConfig({
