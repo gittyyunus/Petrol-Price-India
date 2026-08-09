@@ -88,7 +88,7 @@ I also now glance at the price display and meter zero every single time, which t
 - **Draining or using fuel you already suspect is adulterated, then complaining after the fact.** If you genuinely suspect a bad batch, preserve a sealed sample and the receipt before you do anything else — that's what any formal complaint process needs as evidence.
 - **Skipping the receipt.** Always take the printed bill. Without it, you've got no paper trail if you need to escalate a complaint later.
 - **Assuming one bad experience means every pump of that brand is suspect.** It's usually outlet-specific, tied to that particular dealer or a specific attendant, not the whole company's network.
-- **Not checking a live price reference before you even get to the pump.** This isn't about adulteration, but it's a related habit — I keep a quick check on sites like PetrolPriceIndia.com before longer trips just so I know roughly what the day's rate should be and I'm not caught off guard by a pump quoting something unusual.
+- **Not checking a live price reference before you even get to the pump.** This isn't about adulteration, but it's a related habit — I keep a quick check on sites like [PetrolPriceIndia](https://petrolpriceindia.com/) before longer trips just so I know roughly what the day's rate should be and I'm not caught off guard by a pump quoting something unusual.
 
 ## If you actually find something wrong
 
