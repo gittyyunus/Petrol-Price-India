@@ -32,7 +32,7 @@ I kept Fuel@IOC and HP Pay; SmartDrive didn't earn a home-screen slot.
 
 **GoodReturns and MyPetrolPrice** — These aggregator sites pull up-to-date city-wise rates for petrol and diesel. They're handy for quickly comparing a few cities, but the data can lag the official announcement, so verify the timestamp.
 
-**PetrolPriceIndia.com** — A browser-based site that lists city-wise petrol and diesel from the same official public data. It's the one I ended up bookmarking because it's fast and works without installing yet another app.
+**[PetrolPriceIndia](https://petrolpriceindia.com/)** — A browser-based site that lists city-wise petrol and diesel from the same official public data. It's the one I ended up bookmarking because it's fast and works without installing yet another app.
 
 ## Why checking two sources is the real trick
 
