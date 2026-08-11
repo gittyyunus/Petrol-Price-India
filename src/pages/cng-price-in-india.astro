@@ -21,17 +21,20 @@ const dataDate = latestDateData?.[0]?.date ?? today;
 const [pricesRes, citiesRes] = await Promise.all([
   supabase
     .from('prices')
-    .select('city_name, state_name, cng_price, cng_change')
+    .select('city_id, city_name, state_name, cng_price, cng_change')
     .eq('date', dataDate)
     .not('cng_price', 'is', null),
   supabase
     .from('cities')
-    .select('city_name, city_slug, state_name, state_slug')
+    .select('id, city_name, city_slug, state_name, state_slug')
     .not('city_slug', 'is', null),
 ]);
 
 const prices = pricesRes.data ?? [];
 const cities = citiesRes.data ?? [];
+
+const priceCityIds = new Set(prices.map((p) => p.city_id));
+const citiesWithFuel = cities.filter((c) => priceCityIds.has(c.id));
 
 const normalizeKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -150,7 +153,7 @@ const regionOf = (state: string): string => {
 };
 
 const byRegion = new Map<string, { name: string; slug: string; regionId: string }[]>();
-for (const c of cities) {
+for (const c of citiesWithFuel) {
   const r = regionOf(c.state_name);
   const arr = byRegion.get(r) ?? [];
   arr.push({ name: c.city_name, slug: c.city_slug, regionId: r });
