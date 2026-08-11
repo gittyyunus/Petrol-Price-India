@@ -25,19 +25,25 @@ const howToSchema = {
       "@type": "HowToStep",
       "position": 2,
       "name": "Enter vehicle mileage",
-      "text": "Enter your vehicle's mileage in kilometers per litre."
+      "text": "Enter your vehicle's mileage in kilometers per litre (or per kg for CNG)."
     },
     {
       "@type": "HowToStep",
       "position": 3,
-      "name": "Select your city",
-      "text": "Choose your city from the dropdown to use the current local petrol price."
+      "name": "Select your fuel",
+      "text": "Choose whether you want to estimate the cost for petrol, diesel, CNG or autogas."
     },
     {
       "@type": "HowToStep",
       "position": 4,
+      "name": "Select your city",
+      "text": "Choose your city from the dropdown to use the current local fuel price."
+    },
+    {
+      "@type": "HowToStep",
+      "position": 5,
       "name": "Get your estimate",
-      "text": "Your estimated fuel cost, fuel required, and the current petrol price are calculated instantly."
+      "text": "Your estimated fuel cost, fuel required, and the current fuel price are calculated instantly."
     }
   ],
   "totalTime": "PT1M",
@@ -48,7 +54,7 @@ const howToSchema = {
 };
 
 const title = "Fuel Cost Calculator — Estimate Your Trip Expenses";
-const description = "Calculate your petrol expenses for any trip in India. Input distance, mileage, and select your city for accurate, real-time fuel cost estimation.";
+const description = "Calculate your petrol, diesel, CNG or autogas expenses for any trip in India. Input distance, mileage, and select your city for accurate, real-time fuel cost estimation.";
 ---
 
 <Base title={title} description={description}>
@@ -63,13 +69,26 @@ const description = "Calculate your petrol expenses for any trip in India. Input
         </div>
         <h1 class="text-4xl font-bold tracking-tight text-ink mb-4">Fuel Cost Calculator</h1>
         <p class="text-lg text-body max-w-2xl mx-auto">
-          Planning a road trip? Estimate your fuel expenses based on current petrol prices in your city.
+          Planning a road trip? Estimate your fuel expenses for petrol, diesel, CNG or autogas based on current prices in your city.
         </p>
       </header>
       
       <div class="grid md:grid-cols-2 gap-12">
         <div class="bg-canvas border border-hairline rounded-2xl p-8 shadow-sm h-fit">
           <form id="calc-form" class="space-y-6">
+            <div>
+              <label class="block text-sm font-semibold text-ink mb-2">Fuel</label>
+              <select 
+                id="fuel-select"
+                class="w-full h-12 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/5 focus:border-primary outline-none transition-all appearance-none cursor-pointer"
+              >
+                <option value="petrol">Petrol</option>
+                <option value="diesel">Diesel</option>
+                <option value="cng">CNG</option>
+                <option value="autogas">AutoGas</option>
+              </select>
+            </div>
+            
             <div>
               <label class="block text-sm font-semibold text-ink mb-2 flex items-center gap-2">
                 <Navigation class="w-4 h-4 text-mute" /> Distance (km)
@@ -85,7 +104,7 @@ const description = "Calculate your petrol expenses for any trip in India. Input
             
             <div>
               <label class="block text-sm font-semibold text-ink mb-2 flex items-center gap-2">
-                <Fuel class="w-4 h-4 text-mute" /> Mileage (km/litre)
+                <Fuel class="w-4 h-4 text-mute" /> Mileage (km/<span id="mileage-unit">litre</span>)
               </label>
               <input 
                 type="number" 
@@ -103,11 +122,19 @@ const description = "Calculate your petrol expenses for any trip in India. Input
                 class="w-full h-12 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/5 focus:border-primary outline-none transition-all appearance-none cursor-pointer"
               >
                 {prices?.map(p => (
-                  <option value={p.petrol_price} selected={p.city_name === "Mumbai"}>
-                    {p.city_name} (₹{p.petrol_price?.toFixed(2)})
+                  <option 
+                    value={p.city_name} 
+                    data-petrol={p.petrol_price ?? ''}
+                    data-diesel={p.diesel_price ?? ''}
+                    data-cng={p.cng_price ?? ''}
+                    data-autogas={p.autogas_price ?? ''}
+                    selected={p.city_name === "Mumbai"}
+                  >
+                    {p.city_name}
                   </option>
                 ))}
               </select>
+              <p id="price-hint" class="mt-2 text-xs text-body"></p>
             </div>
           </form>
         </div>
@@ -129,7 +156,7 @@ const description = "Calculate your petrol expenses for any trip in India. Input
                 <span class="font-mono font-bold" id="result-fuel">0.00 Litres</span>
               </div>
               <div class="flex justify-between text-sm">
-                <span class="text-canvas/60">Petrol Price</span>
+                <span class="text-canvas/60" id="result-price-label">Petrol Price</span>
                 <span class="font-mono font-bold" id="result-price">₹0.00/L</span>
               </div>
             </div>
@@ -138,7 +165,7 @@ const description = "Calculate your petrol expenses for any trip in India. Input
           <div class="mt-8 flex items-start gap-3 p-4 bg-canvas-soft border border-hairline rounded-xl">
             <Info class="w-5 h-5 text-mute shrink-0 mt-0.5" />
             <p class="text-xs text-body leading-relaxed">
-              Estimation is based on current petrol prices in the selected city. Actual mileage may vary depending on driving conditions, traffic, and vehicle maintenance.
+              Estimation is based on current fuel prices in the selected city. Actual mileage may vary depending on driving conditions, traffic, and vehicle maintenance.
             </p>
           </div>
         </div>
@@ -152,33 +179,74 @@ const description = "Calculate your petrol expenses for any trip in India. Input
 <script>
   const distanceInput = document.getElementById('distance') as HTMLInputElement;
   const mileageInput = document.getElementById('mileage') as HTMLInputElement;
+  const fuelSelect = document.getElementById('fuel-select') as HTMLSelectElement;
   const citySelect = document.getElementById('city-select') as HTMLSelectElement;
   
   const resultCost = document.getElementById('result-cost');
   const resultFuel = document.getElementById('result-fuel');
   const resultPrice = document.getElementById('result-price');
+  const resultPriceLabel = document.getElementById('result-price-label');
+  const mileageUnit = document.getElementById('mileage-unit');
+  const priceHint = document.getElementById('price-hint');
+  
+  const FUEL_LABELS: Record<string, string> = {
+    petrol: 'Petrol',
+    diesel: 'Diesel',
+    cng: 'CNG',
+    autogas: 'AutoGas'
+  };
+  
+  function selectedFuel(): string {
+    return fuelSelect.value;
+  }
+  
+  function currentPrice(): number {
+    const option = citySelect.selectedOptions[0];
+    const value = option?.dataset[selectedFuel()];
+    return parseFloat(value || '') || 0;
+  }
+  
+  function isCng(): boolean {
+    return selectedFuel() === 'cng';
+  }
+  
+  function unitLabel(): string {
+    return isCng() ? 'kg' : 'L';
+  }
   
   function calculate() {
     const distance = parseFloat(distanceInput.value) || 0;
     const mileage = parseFloat(mileageInput.value) || 0;
-    const price = parseFloat(citySelect.value) || 0;
+    const price = currentPrice();
+    const fuelName = FUEL_LABELS[selectedFuel()] || 'Fuel';
+    
+    if (mileageUnit) mileageUnit.textContent = isCng() ? 'kg' : 'litre';
+    if (resultPriceLabel) resultPriceLabel.textContent = `${fuelName} Price`;
+    
+    if (priceHint) {
+      const cityName = citySelect.selectedOptions[0]?.textContent || '';
+      priceHint.textContent = price > 0
+        ? `${fuelName} price in ${cityName}: ₹${price.toFixed(2)}/${unitLabel()}`
+        : `${fuelName} price unavailable for ${cityName || 'this city'}.`;
+    }
     
     if (distance > 0 && mileage > 0 && price > 0) {
       const fuelRequired = distance / mileage;
       const totalCost = fuelRequired * price;
       
       if (resultCost) resultCost.textContent = `₹${totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      if (resultFuel) resultFuel.textContent = `${fuelRequired.toFixed(2)} Litres`;
-      if (resultPrice) resultPrice.textContent = `₹${price.toFixed(2)}/L`;
+      if (resultFuel) resultFuel.textContent = `${fuelRequired.toFixed(2)} ${isCng() ? 'kg' : 'Litres'}`;
+      if (resultPrice) resultPrice.textContent = `₹${price.toFixed(2)}/${unitLabel()}`;
     } else {
       if (resultCost) resultCost.textContent = '₹0.00';
-      if (resultFuel) resultFuel.textContent = '0.00 Litres';
-      if (resultPrice) resultPrice.textContent = '₹0.00/L';
+      if (resultFuel) resultFuel.textContent = `0.00 ${isCng() ? 'kg' : 'Litres'}`;
+      if (resultPrice) resultPrice.textContent = `₹0.00/${unitLabel()}`;
     }
   }
   
-  [distanceInput, mileageInput, citySelect].forEach(el => {
+  [distanceInput, mileageInput, fuelSelect, citySelect].forEach(el => {
     el?.addEventListener('input', calculate);
+    el?.addEventListener('change', calculate);
   });
   
   // Initial calculation
