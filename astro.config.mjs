@@ -99,7 +99,11 @@ async function getDynamicUrls() {
   }
 }
 
-const dynamicUrls = [...(await getDynamicUrls()), ...getBlogUrls()];
+const dynamicUrls = [
+  'https://petrolpriceindia.com/petrol-price-in-india/',
+  ...(await getDynamicUrls()),
+  ...getBlogUrls(),
+];
 
 // https://astro.build/config
 export default defineConfig({

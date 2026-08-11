@@ -1,5 +1,9 @@
 ---
-import { Sun, Moon } from '@lucide/astro';
+import { Sun, Moon, ChevronDown } from '@lucide/astro';
+
+const fuelPriceLinks = [
+  { label: 'Petrol Price in India', href: '/petrol-price-in-india/' },
+];
 ---
 
 <header class="sticky top-0 z-50 w-full border-b border-hairline bg-canvas/80 backdrop-blur-md">
@@ -11,6 +15,25 @@ import { Sun, Moon } from '@lucide/astro';
       </a>
       
       <nav class="hidden md:flex items-center gap-1">
+        <div class="relative group">
+          <button
+            type="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-label="Fuel Prices menu"
+            class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-full transition-colors"
+          >
+            Fuel Prices
+            <ChevronDown class="w-3.5 h-3.5 transition-transform group-hover:rotate-180" />
+          </button>
+          <div class="absolute left-0 top-full mt-2 w-56 py-2 bg-canvas border border-hairline rounded-xl shadow-md opacity-0 invisible translate-y-1 transition-all group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 z-50">
+            {fuelPriceLinks.map((link) => (
+              <a href={link.href} class="block px-4 py-2.5 text-sm font-medium text-body hover:text-ink hover:bg-canvas-soft-2 transition-colors">
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </div>
         <a href="/compare" class="px-3 py-1.5 text-sm font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-full transition-colors">Compare</a>
         <a href="/calculator" class="px-3 py-1.5 text-sm font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-full transition-colors">Calculator</a>
         <a href="/blog" class="px-3 py-1.5 text-sm font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-full transition-colors">Blog</a>
@@ -42,6 +65,12 @@ import { Sun, Moon } from '@lucide/astro';
 
   <div id="mobile-menu" class="md:hidden hidden border-t border-hairline bg-canvas">
     <nav class="px-4 py-3 flex flex-col">
+      <p class="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-mute">Fuel Prices</p>
+      {fuelPriceLinks.map((link) => (
+        <a href={link.href} class="px-3 py-3 text-base font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-lg transition-colors">
+          {link.label}
+        </a>
+      ))}
       <a href="/compare" class="px-3 py-3 text-base font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-lg transition-colors">Compare</a>
       <a href="/calculator" class="px-3 py-3 text-base font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-lg transition-colors">Calculator</a>
       <a href="/blog" class="px-3 py-3 text-base font-medium text-body hover:text-ink hover:bg-canvas-soft-2 rounded-lg transition-colors">Blog</a>
