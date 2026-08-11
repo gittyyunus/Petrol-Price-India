@@ -1,0 +1,529 @@
+---
+import Base from '../layouts/Base.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { ChevronRight, MapPin, ArrowRight, ExternalLink } from '@lucide/astro';
+import { supabase } from '../lib/supabase';
+import { formatDate } from '../lib/utils';
+
+const today = new Date().toISOString().split('T')[0];
+
+const PRICE_KEY = 'autogas_price';
+const CHANGE_KEY = 'autogas_change';
+
+const { data: latestDateData } = await supabase
+  .from('prices')
+  .select('date')
+  .order('date', { ascending: false })
+  .limit(1);
+const dataDate = latestDateData?.[0]?.date ?? today;
+
+const [pricesRes, citiesRes] = await Promise.all([
+  supabase
+    .from('prices')
+    .select('city_name, state_name, autogas_price, autogas_change')
+    .eq('date', dataDate)
+    .not('autogas_price', 'is', null),
+  supabase
+    .from('cities')
+    .select('city_name, city_slug, state_name, state_slug')
+    .not('city_slug', 'is', null),
+]);
+
+const prices = pricesRes.data ?? [];
+const cities = citiesRes.data ?? [];
+
+const normalizeKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const stateByKey = new Map<string, { state_name: string; state_slug: string }>();
+for (const c of cities) {
+  stateByKey.set(normalizeKey(c.state_name), { state_name: c.state_name, state_slug: c.state_slug });
+}
+
+type StateAgg = {
+  key: string;
+  state: string;
+  slug?: string;
+  total: number;
+  count: number;
+  changeTotal: number;
+  changeCount: number;
+  highest: { city: string; price: number } | null;
+  lowest: { city: string; price: number } | null;
+};
+
+const stateMap = new Map<string, StateAgg>();
+for (const p of prices) {
+  const key = normalizeKey(p.state_name);
+  let agg = stateMap.get(key);
+  if (!agg) {
+    agg = {
+      key,
+      state: p.state_name,
+      slug: stateByKey.get(key)?.state_slug,
+      total: 0,
+      count: 0,
+      changeTotal: 0,
+      changeCount: 0,
+      highest: null,
+      lowest: null,
+    };
+    stateMap.set(key, agg);
+  }
+  const price = Number(p[PRICE_KEY]);
+  agg.total += price;
+  agg.count += 1;
+  if (p[CHANGE_KEY] != null) {
+    agg.changeTotal += Number(p[CHANGE_KEY]);
+    agg.changeCount += 1;
+  }
+  if (!agg.highest || price > agg.highest.price) agg.highest = { city: p.city_name, price };
+  if (!agg.lowest || price < agg.lowest.price) agg.lowest = { city: p.city_name, price };
+}
+
+const ranking = Array.from(stateMap.values())
+  .map((s) => ({ ...s, avg: s.total / s.count, change: s.changeCount ? s.changeTotal / s.changeCount : 0 }))
+  .sort((a, b) => b.avg - a.avg);
+
+const totalCities = ranking.reduce((acc, s) => acc + s.count, 0);
+
+const weightedNationalAvg = ranking.reduce((acc, s) => acc + s.avg * s.count, 0) / (totalCities || 1);
+const highestState = ranking[0] ?? null;
+const lowestState = ranking[ranking.length - 1] ?? null;
+
+const REGIONS: { id: string; label: string; blurb: string; keys: string[] }[] = [
+  {
+    id: 'north',
+    label: 'North India',
+    blurb: 'Delhi NCR, Punjab, Haryana, Uttar Pradesh, Rajasthan, and the Himalayan states.',
+    keys: [
+      'delhi', 'haryana', 'himachalpradesh', 'jammukashmir', 'jammuandkashmir',
+      'ladakh', 'punjab', 'rajasthan', 'uttarakhand', 'uttarakhanda',
+      'uttarpradesh', 'chandigarh',
+    ],
+  },
+  {
+    id: 'south',
+    label: 'South India',
+    blurb: 'Andhra Pradesh, Telangana, Karnataka, Kerala, Tamil Nadu, and the southern Union Territories.',
+    keys: [
+      'andhrapradesh', 'telangana', 'karnataka', 'kerala', 'tamilnadu',
+      'puducherry', 'pondicherry', 'andamanandnicobarislands', 'andamannicobarislands', 'lakshadweep',
+    ],
+  },
+  {
+    id: 'east',
+    label: 'East India',
+    blurb: 'West Bengal, Bihar, Jharkhand, and Odisha.',
+    keys: ['westbengal', 'bihar', 'jharkhand', 'odisha', 'orissa'],
+  },
+  {
+    id: 'west',
+    label: 'West India',
+    blurb: 'Maharashtra, Gujarat, Goa, and the western Union Territories.',
+    keys: [
+      'maharashtra', 'gujarat', 'goa',
+      'dadraandnagarhavelianddamandiu', 'dadraandnagarhaveli', 'damandiu',
+    ],
+  },
+  {
+    id: 'central',
+    label: 'Central India',
+    blurb: 'Madhya Pradesh and Chhattisgarh.',
+    keys: ['madhyapradesh', 'chhattisgarh', 'chattisgarh'],
+  },
+  {
+    id: 'northeast',
+    label: 'Northeast India',
+    blurb: 'Assam, Arunachal Pradesh, Manipur, Meghalaya, Mizoram, Nagaland, Sikkim, and Tripura.',
+    keys: [
+      'assam', 'arunachalpradesh', 'manipur', 'meghalaya',
+      'mizoram', 'nagaland', 'sikkim', 'tripura',
+    ],
+  },
+];
+
+const regionOf = (state: string): string => {
+  const k = normalizeKey(state);
+  for (const r of REGIONS) if (r.keys.includes(k)) return r.id;
+  return 'other';
+};
+
+const byRegion = new Map<string, { name: string; slug: string; regionId: string }[]>();
+for (const c of cities) {
+  const r = regionOf(c.state_name);
+  const arr = byRegion.get(r) ?? [];
+  arr.push({ name: c.city_name, slug: c.city_slug, regionId: r });
+  byRegion.set(r, arr);
+}
+
+const regionsWithCities = REGIONS.map((r) => ({
+  ...r,
+  cities: (byRegion.get(r.id) ?? []).sort((a, b) => a.name.localeCompare(b.name)),
+})).filter((r) => r.cities.length > 0);
+
+const otherCities = (byRegion.get('other') ?? []).sort((a, b) => a.name.localeCompare(b.name));
+
+const title = "Autogas / LPG Price in India Today — City-Wise Rates & Directory";
+const description = `Today's autogas (auto LPG) price in India by state and city — a live ranking across cities that offer vehicle LPG, a full directory of autogas city pages grouped by region, and answers to common questions. Updated regularly.`;
+
+const faqEntity = [
+  {
+    "@type": "Question",
+    "name": "What is the autogas / LPG price in India today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `Autogas (auto LPG) prices are set by the oil marketing companies and vary by city. As of the latest update, the weighted average of our tracked cities is roughly ₹${weightedNationalAvg.toFixed(2)} per litre, ranging from about ₹${lowestState?.avg.toFixed(2)} in ${lowestState?.state} to about ₹${highestState?.avg.toFixed(2)} in ${highestState?.state}.`
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is autogas / LPG used for?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Autogas is the automotive-grade LPG used to run vehicles, in the same way petrol and diesel are. It is different from the LPG cylinder used for home cooking, though both are liquefied petroleum gas. CNG-run and LPG-run vehicles for private and fleet use are the common applications, particularly in auto rickshaws and taxis in cities where it is available."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "Why is autogas not available in every city?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Autogas refueling needs dedicated dispensing stations and local distribution. Unlike petrol and diesel, which are available at nearly every pump through the national retail network, autogas stations are concentrated in cities where a distributor network has been set up and demand justifies it. Coverage grows over time but remains far thinner than for conventional fuels."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "How does autogas compare in cost to petrol, diesel and CNG?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "On a cost-per-kilometre basis autogas is usually cheaper than petrol and diesel, though the exact gap depends on your vehicle and mileage. The comparison with CNG is closer and varies by city. Use the calculator on this site to compare actual running costs for your vehicle against today's rates."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "Why does autogas cost more in one city than another?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Autogas pricing layers a base price, central excise duty, state VAT and a distributor margin, and the state-level taxes differ across India. Conservation and transport costs also vary from city to city, so the same LPG can carry a noticeably different pump price depending on where you fill up."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "Is autogas the same as the LPG used for cooking?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Both are liquefied petroleum gas and are chemically similar, but autogas is sold as a vehicle fuel through dedicated dispensing stations, carries a different pricing and tax structure, and is the grade/application intended for engines. Household cylinder LPG is subsidised and priced separately."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "How often does the autogas price change?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Autogas rates are revised by the oil marketing companies from time to time in line with international LPG prices and domestic taxes, rather than on a strict daily schedule. This page is re-checked regularly so the rates shown stay current."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "How can I check today's autogas price in my city?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Use the city directory on this page, or visit a URL in the form /autogas-price-in-<your-city>. Every city page shows the current rate, recent changes, a 30-day trend chart, and price history where coverage exists."
+    }
+  }
+];
+
+const pageSchema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://petrolpriceindia.com" },
+        { "@type": "ListItem", "position": 2, "name": "Autogas / LPG Price in India" }
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "name": title,
+      "description": description,
+      "url": "https://petrolpriceindia.com/autogas-price-in-india/",
+      "publisher": { "@type": "Organization", "name": "Petrol Price India" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": faqEntity
+    }
+  ]
+};
+---
+<Base title={title} description={description}>
+  {pageSchema && <script type="application/ld+json" set:html={JSON.stringify(pageSchema)} />}
+  <Navbar />
+
+  <main class="flex-1 bg-canvas-soft">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <nav class="flex items-center gap-2 text-xs font-medium text-mute mb-8 overflow-x-auto whitespace-nowrap">
+        <a href="/" class="hover:text-ink">Home</a>
+        <ChevronRight class="w-3 h-3" />
+        <span class="text-ink">Autogas / LPG Price in India</span>
+      </nav>
+
+      {/* Intro */}
+      <header class="mb-12">
+        <div class="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-mute mb-4">
+          <span class="w-1.5 h-1.5 rounded-full bg-success"></span>
+          Updated regularly
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-ink mb-4">
+          Autogas / LPG Price in <span class="text-primary">India</span> Today
+        </h1>
+        <p class="text-lg text-body max-w-3xl leading-relaxed">
+          Live autogas prices across the Indian cities where vehicle LPG (auto LPG) refueling is available — the same
+          gas used to run LPG-fitted cars, auto rickshaws and taxis. This is the single hub for the national picture:
+          a city and state price snapshot, a simple breakdown of how autogas rates are set, and a full directory of
+          autogas city pages so you can jump straight to your city.
+        </p>
+        <p class="text-sm text-mute mt-4">
+          Prices shown are the latest published retail rates, current for <strong class="text-ink">{formatDate(dataDate)}</strong>.
+          Autogas is sold by the litre at the pump, so rates below are per litre.
+        </p>
+      </header>
+
+      {/* Quick stats */}
+      {ranking.length > 0 && (
+        <section class="grid sm:grid-cols-3 gap-6 mb-12" aria-label="National summary">
+          <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm">
+            <p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">National Average</p>
+            <p class="text-3xl font-bold text-ink">₹{weightedNationalAvg.toFixed(2)}<span class="text-sm font-normal text-mute ml-1">/L</span></p>
+            <p class="text-xs text-body mt-1">across {ranking.length} states / UTs</p>
+          </div>
+          <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm border-l-4 border-l-error">
+            <p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">Most Expensive Today</p>
+            <p class="text-3xl font-bold text-ink">₹{highestState?.avg.toFixed(2) || 'N/A'}</p>
+            <p class="text-xs text-body mt-1">
+              <a href={`/autogas-price-in-${highestState?.slug || ''}`} class="hover:text-primary">{highestState?.state}</a>
+            </p>
+          </div>
+          <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm border-l-4 border-l-success">
+            <p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">Cheapest Today</p>
+            <p class="text-3xl font-bold text-ink">₹{lowestState?.avg.toFixed(2) || 'N/A'}</p>
+            <p class="text-xs text-body mt-1">
+              <a href={`/autogas-price-in-${lowestState?.slug || ''}`} class="hover:text-primary">{lowestState?.state}</a>
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* How prices are set */}
+      <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm mb-12">
+        <h2 class="text-2xl font-bold text-ink mb-4">How Autogas / LPG Prices Are Set in India</h2>
+        <p class="text-body mb-6">
+          Autogas pricing follows a similar structure to petrol and diesel — a base price with taxes stacked on top —
+          but with a few differences worth knowing:
+        </p>
+        <ol class="list-decimal pl-6 space-y-2 text-body mb-6">
+          <li><strong class="text-ink">Base price</strong> — what the oil marketing company pays for imported/domestic LPG, refining (fractionation) and transporting it to the dispensing station.</li>
+          <li><strong class="text-ink">Central excise duty</strong> — a per-litre amount set by the central government, uniform across the country.</li>
+          <li><strong class="text-ink">Distributor / dealer margin</strong> — the station operator's cut for running the dispenser.</li>
+          <li><strong class="text-ink">State VAT / sales tax</strong> — set individually by each state, which is where most of the price gap between cities comes from.</li>
+        </ol>
+        <p class="text-body mb-4">
+          Autogas shares the petrol/diesel model more closely than CNG does: it is a liquid fuel sold by the litre
+          with an excise-plus-VAT structure, rather than a gas priced per kilogram by each city's distribution
+          license. But it differs from petrol and diesel in reach — autogas is sold through a much thinner network of
+          dedicated stations, and it is not on the daily dynamic pricing schedule, so rates are revised less
+          frequently.
+        </p>
+        <a href="/blog/how-fuel-excise-duty-and-state-vat-are-calculated/" class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+          Read the full worked example on fuel pricing <ArrowRight class="w-4 h-4" />
+        </a>
+      </section>
+
+      {/* State ranking */}
+      <section class="mb-12" id="state-ranking">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
+          <div>
+            <h2 class="text-2xl font-bold text-ink mb-2">Autogas / LPG Price Ranking by State / UT</h2>
+            <p class="text-body text-sm">States and Union Territories ranked by average retail autogas price, highest to lowest. Rebuilt from the latest data.</p>
+          </div>
+          <a href="/blog/state-wise-petrol-price-ranking-2026/" class="text-sm font-semibold text-primary hover:underline flex items-center gap-1 shrink-0">
+            Full ranking analysis <ArrowRight class="w-4 h-4" />
+          </a>
+        </div>
+
+        <div class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead class="bg-canvas-soft-2 text-[10px] font-mono uppercase tracking-widest text-mute">
+                <tr>
+                  <th class="px-6 py-3">Rank</th>
+                  <th class="px-6 py-3">State / UT</th>
+                  <th class="px-6 py-3 text-right">Avg Price (₹/L)</th>
+                  <th class="px-6 py-3 text-right hidden md:table-cell">vs Last Update</th>
+                  <th class="px-6 py-3 text-right hidden lg:table-cell">Cities Tracked</th>
+                  <th class="px-6 py-3"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-hairline">
+                {ranking.map((s, i) => (
+                  <tr class="hover:bg-canvas-soft transition-colors group">
+                    <td class="px-6 py-4">
+                      <span class={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${i === 0 ? 'bg-error/10 text-error' : i === ranking.length - 1 ? 'bg-success/10 text-success' : 'bg-canvas-soft-2 text-body'}`}>
+                        {i + 1}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <p class="text-sm font-semibold text-ink">{s.state}</p>
+                      {s.lowest && (
+                        <p class="text-[10px] text-mute mt-0.5">Lowest: {s.lowest.city} · Highest: {s.highest?.city}</p>
+                      )}
+                    </td>
+                    <td class="px-6 py-4 text-sm font-mono font-bold text-right">₹{s.avg.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-sm font-mono text-right hidden md:table-cell">
+                      <span class={s.change > 0 ? 'text-error' : s.change < 0 ? 'text-success' : 'text-mute'}>
+                        {s.change > 0 ? '▲' : s.change < 0 ? '▼' : '—'} {Math.abs(s.change).toFixed(2)}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-mono text-right hidden lg:table-cell">{s.count}</td>
+                    <td class="px-6 py-4 text-right">
+                      {s.slug && (
+                        <a href={`/autogas-price-in-${s.slug}`} class="inline-flex items-center gap-1 text-xs font-semibold text-mute group-hover:text-primary transition-colors">
+                          View <ChevronRight class="w-3 h-3" />
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {ranking.length > 0 && (
+          <p class="text-sm text-body mt-4">
+            The spread between the highest and lowest states is roughly
+            <strong class="text-ink"> ₹{((highestState?.avg ?? 0) - (lowestState?.avg ?? 0)).toFixed(2)} per litre</strong>.
+            Autogas coverage is thin — it is available only at dedicated auto LPG stations, and not every city in a
+            state has one — so the city-level rates above matter more than the state average.
+          </p>
+        )}
+      </section>
+
+      {/* Region directory */}
+      <section class="mb-12" id="city-directory">
+        <h2 class="text-2xl font-bold text-ink mb-3">Autogas / LPG Price by Region — City Directory</h2>
+        <p class="text-body max-w-3xl mb-6">
+          Jump straight to any city's live autogas price page where coverage exists. Every city page links back to this
+          hub, and every link below points down to a city page.
+        </p>
+
+        <nav class="flex flex-wrap gap-2 mb-8" aria-label="Jump to region">
+          {regionsWithCities.map((r) => (
+            <a href={`#region-${r.id}`} class="px-4 py-2 rounded-full border border-hairline bg-canvas hover:border-primary hover:text-primary transition-colors text-sm font-semibold text-body">
+              {r.label} <span class="text-mute font-normal">({r.cities.length})</span>
+            </a>
+          ))}
+        </nav>
+
+        <div class="space-y-10">
+          {regionsWithCities.map((r) => (
+            <section id={`region-${r.id}`} class="scroll-mt-24">
+              <div class="flex items-center gap-2 mb-4">
+                <MapPin class="w-4 h-4 text-mute" />
+                <h3 class="text-xl font-bold text-ink">{r.label}</h3>
+                <span class="text-xs font-mono text-mute uppercase tracking-widest">{r.cities.length} cities</span>
+              </div>
+              <p class="text-sm text-body mb-5">{r.blurb}</p>
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-5 gap-y-2.5">
+                {r.cities.map((c) => (
+                  <a
+                    href={`/autogas-price-in-${c.slug}`}
+                    class="text-sm text-body hover:text-primary transition-colors truncate font-medium"
+                  >
+                    {c.name}
+                  </a>
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {otherCities.length > 0 && (
+            <section id="region-other">
+              <div class="flex items-center gap-2 mb-4">
+                <MapPin class="w-4 h-4 text-mute" />
+                <h3 class="text-xl font-bold text-ink">Union Territories & Others</h3>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-5 gap-y-2.5">
+                {otherCities.map((c) => (
+                  <a href={`/autogas-price-in-${c.slug}`} class="text-sm text-body hover:text-primary transition-colors truncate font-medium">
+                    {c.name}
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+        <div class="mt-8">
+          <a href="/all-cities" class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+            Browse the complete alphabetical city directory <ArrowRight class="w-4 h-4" />
+          </a>
+        </div>
+      </section>
+
+      {/* Supporting content */}
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-ink mb-6">Tools & Further Reading</h2>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <a href="/blog/state-wise-petrol-price-ranking-2026/" class="group bg-canvas border border-hairline rounded-xl p-6 shadow-sm hover:border-primary transition-colors">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-ink">State-Wise Price Ranking</h3>
+              <ExternalLink class="w-4 h-4 text-mute group-hover:text-primary transition-colors" />
+            </div>
+            <p class="text-sm text-body">Which states tax fuel the hardest — and which go easy on you.</p>
+          </a>
+          <a href="/calculator" class="group bg-canvas border border-hairline rounded-xl p-6 shadow-sm hover:border-primary transition-colors">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-ink">Fuel Cost Calculator</h3>
+              <ExternalLink class="w-4 h-4 text-mute group-hover:text-primary transition-colors" />
+            </div>
+            <p class="text-sm text-body">Estimate the cost of any trip from current prices and your mileage.</p>
+          </a>
+          <a href="/compare" class="group bg-canvas border border-hairline rounded-xl p-6 shadow-sm hover:border-primary transition-colors">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-ink">Compare Fuel Types</h3>
+              <ExternalLink class="w-4 h-4 text-mute group-hover:text-primary transition-colors" />
+            </div>
+            <p class="text-sm text-body">Petrol vs diesel vs CNG vs autogas, side by side for your city.</p>
+          </a>
+          <a href="/blog/how-fuel-excise-duty-and-state-vat-are-calculated/" class="group bg-canvas border border-hairline rounded-xl p-6 shadow-sm hover:border-primary transition-colors">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-ink">How Fuel Prices Are Calculated</h3>
+              <ExternalLink class="w-4 h-4 text-mute group-hover:text-primary transition-colors" />
+            </div>
+            <p class="text-sm text-body">The full step-by-step breakdown with real numbers.</p>
+          </a>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-ink mb-6">Frequently Asked Questions</h2>
+        <div class="space-y-4">
+          {
+            faqEntity.map((q) => (
+              <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm">
+                <h3 class="text-base font-bold text-ink mb-2">{q.name}</h3>
+                <p class="text-sm text-body">{q.acceptedAnswer.text}</p>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <Footer />
+</Base>
