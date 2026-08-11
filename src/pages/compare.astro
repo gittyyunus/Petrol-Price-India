@@ -10,8 +10,8 @@ const { data: cities } = await supabase.from('cities').select('*').order('city_n
 const { data: latestPricesData } = await supabase.from('prices').select('*').eq('date', today);
 const latestPrices = latestPricesData || [];
 
-const title = "Compare Petrol Prices — Side-by-Side Comparison";
-const description = "Compare petrol prices across different cities in India. Select up to 4 cities and see side-by-side price comparison and history.";
+const title = "Compare Fuel Prices — Side-by-Side Comparison";
+const description = "Compare petrol, diesel, CNG or autogas prices across different cities in India. Select a fuel and up to 4 cities to see side-by-side price comparison.";
 ---
 
 <Base title={title} description={description}>
@@ -31,9 +31,22 @@ const description = "Compare petrol prices across different cities in India. Sel
         </div>
         <h1 class="text-4xl font-bold tracking-tight text-ink mb-4">Compare Cities</h1>
         <p class="text-lg text-body max-w-2xl mx-auto">
-          Select up to 4 cities to compare their current petrol prices side-by-side.
+          Pick a fuel and select up to 4 cities to compare their current prices side-by-side.
         </p>
       </header>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
+        <label for="fuel-select" class="text-sm font-semibold text-ink shrink-0">Fuel:</label>
+        <select
+          id="fuel-select"
+          class="w-full sm:w-72 h-12 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/5 focus:border-primary outline-none transition-all appearance-none cursor-pointer text-sm font-semibold text-ink"
+        >
+          <option value="petrol">Petrol</option>
+          <option value="diesel">Diesel</option>
+          <option value="cng">CNG</option>
+          <option value="autogas">Autogas (LPG)</option>
+        </select>
+      </div>
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16" id="compare-grid">
         {/* Comparison cards will be injected by JS */}
@@ -49,7 +62,7 @@ const description = "Compare petrol prices across different cities in India. Sel
       <div id="comparison-table-container" class="hidden">
         <section class="bg-canvas border border-hairline rounded-2xl overflow-hidden shadow-sm">
           <div class="px-8 py-6 border-b border-hairline bg-canvas">
-            <h2 class="text-xl font-bold text-ink">Comparison Details</h2>
+            <h2 class="text-xl font-bold text-ink" id="comparison-table-title">Comparison Details</h2>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left">
@@ -103,6 +116,13 @@ const description = "Compare petrol prices across different cities in India. Sel
 </Base>
 
 <script define:vars={{ latestPrices }}>
+  const FUELS = {
+    petrol: { label: 'Petrol', priceKey: 'petrol_price', changeKey: 'price_change', unit: '/L' },
+    diesel: { label: 'Diesel', priceKey: 'diesel_price', changeKey: 'diesel_change', unit: '/L' },
+    cng: { label: 'CNG', priceKey: 'cng_price', changeKey: 'cng_change', unit: '/kg' },
+    autogas: { label: 'Autogas', priceKey: 'autogas_price', changeKey: 'autogas_change', unit: '/L' },
+  };
+  let currentFuel = 'petrol';
   let selectedCities = [];
   const MAX_CITIES = 4;
   
@@ -114,8 +134,11 @@ const description = "Compare petrol prices across different cities in India. Sel
   const modalCityList = document.getElementById('modal-city-list');
   const tableContainer = document.getElementById('comparison-table-container');
   const tableBody = document.getElementById('comparison-table-body');
+  const tableTitle = document.getElementById('comparison-table-title');
+  const fuelSelect = document.getElementById('fuel-select');
   
   function updateUI() {
+    const { priceKey, changeKey, unit } = FUELS[currentFuel];
     // Clear current cards except add button
     const cards = grid.querySelectorAll('.city-card');
     cards.forEach(c => c.remove());
@@ -127,7 +150,7 @@ const description = "Compare petrol prices across different cities in India. Sel
     
     if (isFull) {
       selectedCities.forEach(city => {
-        const p = latestPrices.find(lp => lp.city_id === city.id)?.petrol_price;
+        const p = latestPrices.find(lp => lp.city_id === city.id)?.[priceKey];
         if (p !== undefined) {
           if (p < minPrice) minPrice = p;
           if (p > maxPrice) maxPrice = p;
@@ -137,8 +160,8 @@ const description = "Compare petrol prices across different cities in India. Sel
 
     selectedCities.forEach((city, index) => {
       const priceInfo = latestPrices.find(p => p.city_id === city.id);
-      const isMin = isFull && priceInfo?.petrol_price === minPrice;
-      const isMax = isFull && priceInfo?.petrol_price === maxPrice;
+      const isMin = isFull && priceInfo?.[priceKey] === minPrice;
+      const isMax = isFull && priceInfo?.[priceKey] === maxPrice;
 
       const card = document.createElement('div');
       card.className = `city-card border rounded-2xl p-8 shadow-sm relative group animate-fade-in ${
@@ -155,12 +178,12 @@ const description = "Compare petrol prices across different cities in India. Sel
           <h3 class="text-xl font-bold text-ink">${city.name}</h3>
         </div>
         <div class="mb-2">
-          <span class="text-4xl font-bold tracking-tight">₹${priceInfo?.petrol_price?.toFixed(2) || 'N/A'}</span>
-          <span class="text-mute text-sm">/L</span>
+          <span class="text-4xl font-bold tracking-tight">₹${priceInfo?.[priceKey]?.toFixed(2) || 'N/A'}</span>
+          <span class="text-mute text-sm">${unit}</span>
         </div>
-        <div class="flex items-center gap-1.5 text-xs font-semibold ${priceInfo?.price_change > 0 ? 'text-error' : priceInfo?.price_change < 0 ? 'text-success' : 'text-mute'}">
-          ${priceInfo?.price_change > 0 ? '▲' : priceInfo?.price_change < 0 ? '▼' : '—'} 
-          ₹${Math.abs(priceInfo?.price_change || 0).toFixed(2)}
+        <div class="flex items-center gap-1.5 text-xs font-semibold ${priceInfo?.[changeKey] > 0 ? 'text-error' : priceInfo?.[changeKey] < 0 ? 'text-success' : 'text-mute'}">
+          ${priceInfo?.[changeKey] > 0 ? '▲' : priceInfo?.[changeKey] < 0 ? '▼' : '—'} 
+          ₹${Math.abs(priceInfo?.[changeKey] || 0).toFixed(2)}
         </div>
       `;
       grid.insertBefore(card, addBtn);
@@ -182,14 +205,16 @@ const description = "Compare petrol prices across different cities in India. Sel
     }
     
     tableContainer.classList.remove('hidden');
+    if (tableTitle) tableTitle.textContent = `Comparison Details — ${FUELS[currentFuel].label}`;
     
+    const { priceKey, changeKey } = FUELS[currentFuel];
     let minPrice = Infinity;
     let maxPrice = -Infinity;
     const isFull = selectedCities.length === MAX_CITIES;
     
     if (isFull) {
       selectedCities.forEach(city => {
-        const p = latestPrices.find(lp => lp.city_id === city.id)?.petrol_price;
+        const p = latestPrices.find(lp => lp.city_id === city.id)?.[priceKey];
         if (p !== undefined) {
           if (p < minPrice) minPrice = p;
           if (p > maxPrice) maxPrice = p;
@@ -198,8 +223,8 @@ const description = "Compare petrol prices across different cities in India. Sel
     }
 
     const rows = [
-      { label: 'Today\'s Price', key: 'petrol_price', prefix: '₹' },
-      { label: 'Daily Change', key: 'price_change', prefix: '₹' },
+      { label: 'Today\'s Price', key: priceKey, prefix: '₹' },
+      { label: 'Daily Change', key: changeKey, prefix: '₹' },
     ];
     
     let tableHtml = rows.map(row => `
@@ -209,7 +234,7 @@ const description = "Compare petrol prices across different cities in India. Sel
           const priceInfo = latestPrices.find(p => p.city_id === city.id);
           const val = priceInfo?.[row.key];
           let colorClass = 'text-ink';
-          if (isFull && row.key === 'petrol_price') {
+          if (isFull && row.key === priceKey) {
             if (val === minPrice) colorClass = 'text-success font-bold';
             if (val === maxPrice) colorClass = 'text-error font-bold';
           }
@@ -228,7 +253,7 @@ const description = "Compare petrol prices across different cities in India. Sel
           <td class="px-8 py-6 text-sm font-semibold text-body bg-canvas-soft-2 w-48 italic">Diff. from Lowest</td>
           ${selectedCities.map(city => {
             const priceInfo = latestPrices.find(p => p.city_id === city.id);
-            const val = priceInfo?.petrol_price;
+            const val = priceInfo?.[priceKey];
             const diff = val !== undefined ? val - minPrice : null;
             let colorClass = 'text-ink';
             if (diff === 0) colorClass = 'text-success font-bold';
@@ -247,7 +272,39 @@ const description = "Compare petrol prices across different cities in India. Sel
     tableBody.innerHTML = tableHtml;
   }
   
-  addBtn?.addEventListener('click', () => modal?.classList.remove('hidden'));
+  function hasFuelData(cityId, fuelKey) {
+    const row = latestPrices.find(lp => lp.city_id === cityId);
+    const val = row?.[FUELS[fuelKey].priceKey];
+    return val !== undefined && val !== null;
+  }
+
+  function filterModalCities() {
+    const query = (modalSearch?.value || '').toLowerCase();
+    const cityBtns = modalCityList?.querySelectorAll('button');
+    cityBtns?.forEach(btn => {
+      const id = parseInt(btn.dataset.cityId);
+      const name = (btn.dataset.cityName || '').toLowerCase();
+      const hasData = hasFuelData(id, currentFuel);
+      const matchesQuery = name.includes(query);
+      if (hasData && matchesQuery) {
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    });
+  }
+
+  fuelSelect?.addEventListener('change', (e) => {
+    currentFuel = e.target.value;
+    selectedCities = selectedCities.filter(c => hasFuelData(c.id, currentFuel));
+    updateUI();
+    filterModalCities();
+  });
+  
+  addBtn?.addEventListener('click', () => {
+    filterModalCities();
+    modal?.classList.remove('hidden');
+  });
   closeModal?.addEventListener('click', () => modal?.classList.add('hidden'));
   
   modalCityList?.addEventListener('click', (e) => {
@@ -274,18 +331,7 @@ const description = "Compare petrol prices across different cities in India. Sel
     }
   });
   
-  modalSearch?.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    const cityBtns = modalCityList?.querySelectorAll('button');
-    cityBtns?.forEach(btn => {
-      const name = (btn.dataset.cityName || "").toLowerCase();
-      if (name.includes(query)) {
-        btn.classList.remove('hidden');
-      } else {
-        btn.classList.add('hidden');
-      }
-    });
-  });
+  modalSearch?.addEventListener('input', () => filterModalCities());
 </script>
 
 <style>
