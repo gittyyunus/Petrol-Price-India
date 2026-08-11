@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import { supabase } from '../lib/supabase';
-import { Calculator as CalcIcon, Fuel, Navigation, Info } from '@lucide/astro';
+import { Calculator as CalcIcon, Fuel, Navigation, Info, ChevronRight } from '@lucide/astro';
 
 const { data: cities } = await supabase.from('cities').select('id, city_name, city_slug');
 const today = new Date().toISOString().split('T')[0];
@@ -63,6 +63,12 @@ const description = "Calculate your petrol, diesel, CNG or autogas expenses for 
   
   <main class="flex-1 bg-canvas-soft">
     <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16">
+      <nav class="flex items-center gap-2 text-xs font-medium text-mute mb-8 overflow-x-auto whitespace-nowrap">
+        <a href="/" class="hover:text-ink">Home</a>
+        <ChevronRight class="w-3 h-3" />
+        <span class="text-ink">Fuel Cost Calculator</span>
+      </nav>
+
       <header class="text-center mb-16">
         <div class="inline-flex items-center justify-center p-3 bg-primary/5 rounded-2xl mb-6">
           <CalcIcon class="w-8 h-8 text-primary" />

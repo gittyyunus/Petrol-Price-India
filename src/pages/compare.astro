@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import { supabase } from '../lib/supabase';
-import { Columns2, Plus, X, ArrowUpDown, TrendingUp, TrendingDown } from '@lucide/astro';
+import { Columns2, Plus, X, ArrowUpDown, TrendingUp, TrendingDown, ChevronRight } from '@lucide/astro';
 
 const today = new Date().toISOString().split('T')[0];
 const { data: cities } = await supabase.from('cities').select('*').order('city_name');
@@ -19,6 +19,12 @@ const description = "Compare petrol prices across different cities in India. Sel
   
   <main class="flex-1 bg-canvas-soft">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+      <nav class="flex items-center gap-2 text-xs font-medium text-mute mb-8 overflow-x-auto whitespace-nowrap">
+        <a href="/" class="hover:text-ink">Home</a>
+        <ChevronRight class="w-3 h-3" />
+        <span class="text-ink">Compare</span>
+      </nav>
+
       <header class="text-center mb-16">
         <div class="inline-flex items-center justify-center p-3 bg-primary/5 rounded-2xl mb-6">
           <Columns2 class="w-8 h-8 text-primary" />

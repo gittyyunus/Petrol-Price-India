@@ -3,6 +3,7 @@ import { getEntry, getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Navbar from '../../components/Navbar.astro';
 import Footer from '../../components/Footer.astro';
+import { ChevronRight } from '@lucide/astro';
 
 const { slug } = Astro.params;
 
@@ -28,6 +29,14 @@ const date = post.data.pubDate.toLocaleDateString('en-IN', { year: 'numeric', mo
 
   <main class="flex-1 bg-canvas-soft">
     <article class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-16">
+      <nav class="flex items-center gap-2 text-xs font-medium text-mute mb-8 overflow-x-auto whitespace-nowrap">
+        <a href="/" class="hover:text-ink">Home</a>
+        <ChevronRight class="w-3 h-3" />
+        <a href="/blog/" class="hover:text-ink">Blog</a>
+        <ChevronRight class="w-3 h-3" />
+        <span class="text-ink">{post.data.title}</span>
+      </nav>
+
       <a href="/blog" class="inline-flex items-center gap-2 text-sm text-body hover:text-ink transition-colors mb-8">
         &larr; Back to Blog
       </a>
