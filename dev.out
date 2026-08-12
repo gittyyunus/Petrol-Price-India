@@ -7,3 +7,5 @@ Generated 12 blog sitemap URLs
 [2m14:46:01[22m [34m[@astrojs/cloudflare][39m Enabling image processing with Cloudflare Images for production with the "IMAGES" Images binding.
 [2m14:46:01[22m [34m[@astrojs/cloudflare][39m Enabling sessions with Cloudflare KV with the "SESSION" KV binding.
 Using secrets defined in .env
+[vite] connected.
+[2m14:46:04[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
