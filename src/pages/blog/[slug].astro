@@ -22,9 +22,43 @@ const next = index >= 0 && index < allPosts.length - 1 ? allPosts[index + 1] : n
 
 const fullTitle = `${post.data.title} | Petrol Price India`;
 const date = post.data.pubDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const siteURL = 'https://petrolpriceindia.com';
+const articleURL = `${siteURL}/blog/${post.id}/`;
+const publishedISO = post.data.pubDate.toISOString();
+const modifiedISO = (post.data.updatedDate ?? post.data.pubDate).toISOString();
+
+const articleSchema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": post.data.title,
+  "description": post.data.description,
+  "author": {
+    "@type": "Person",
+    "name": "Yunus",
+    "url": `${siteURL}/about/`
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Petrol Price India",
+    "url": siteURL,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${siteURL}/favicon.svg`
+    }
+  },
+  "datePublished": publishedISO,
+  "dateModified": modifiedISO,
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": articleURL
+  },
+  "url": articleURL
+};
 ---
 
-<Base title={fullTitle} description={post.data.description}>
+<Base title={fullTitle} description={post.data.description} articlePublishedTime={publishedISO} articleModifiedTime={modifiedISO}>
+  {articleSchema && <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />}
   <Navbar />
 
   <main class="flex-1 bg-canvas-soft">
@@ -42,9 +76,14 @@ const date = post.data.pubDate.toLocaleDateString('en-IN', { year: 'numeric', mo
       </a>
 
       <header class="mb-10">
-        <div class="flex items-center gap-3 mb-4">
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4">
           <span class="text-sm text-mute">{date}</span>
           <span class="text-sm px-2 py-1 bg-canvas-soft-2 text-body rounded-full">{post.data.category}</span>
+          <span class="w-1 h-1 rounded-full bg-hairline"></span>
+          <a href="/about/" class="inline-flex items-center gap-2 text-sm font-medium text-body hover:text-primary transition-colors" rel="author">
+            <span class="w-6 h-6 rounded-full bg-canvas-soft-2 border border-hairline inline-flex items-center justify-center text-[11px] font-bold text-mute">Y</span>
+            <span>By <span class="font-semibold text-ink">Yunus</span></span>
+          </a>
         </div>
         <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-ink mb-4 leading-tight">{post.data.title}</h1>
         <p class="text-lg text-body leading-relaxed">{post.data.description}</p>

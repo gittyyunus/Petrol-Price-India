@@ -4,8 +4,21 @@
 
 Generated 2180 dynamic sitemap URLs (512 cities, 4 fuel types)
 Generated 12 blog sitemap URLs
-[2m14:46:01[22m [34m[@astrojs/cloudflare][39m Enabling image processing with Cloudflare Images for production with the "IMAGES" Images binding.
-[2m14:46:01[22m [34m[@astrojs/cloudflare][39m Enabling sessions with Cloudflare KV with the "SESSION" KV binding.
+[2m14:58:20[22m [34m[@astrojs/cloudflare][39m Enabling image processing with Cloudflare Images for production with the "IMAGES" Images binding.
+[2m14:58:20[22m [34m[@astrojs/cloudflare][39m Enabling sessions with Cloudflare KV with the "SESSION" KV binding.
 Using secrets defined in .env
 [vite] connected.
-[2m14:46:04[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[2m14:58:26[22m [34m[types][39m Generated [2m8ms[22m
+[2m14:58:28[22m [34m[content][39m Syncing content
+[2m14:58:28[22m [34m[content][39m Synced content
+[2m14:58:28[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[2m14:58:28[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[42m[1m astro [22m[49m [32mv6.4.6[39m [2mready in[22m 18807 [2mms[22m
+[2m┃[22m Local    [36mhttp://127.0.0.1:4321/[39m
+[2m14:58:34[22m [32mwatching for file changes...[39m
+[2m14:58:38[22m [34m[vite][39m [vite] program reload
+[2m14:58:42[22m [34m[vite][39m [vite] program reload
+[2m14:58:45[22m [34m[vite][39m [vite] program reload
+[2m14:58:46[22m [34m[watch][39m post1.html
+[2m14:58:46[22m [34m[watch][39m post1.html
+[2m15:01:12[22m [34m[vite][39m [vite] program reload
