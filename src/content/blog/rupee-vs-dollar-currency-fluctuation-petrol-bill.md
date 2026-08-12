@@ -4,6 +4,9 @@ description: "Why petrol prices sometimes move in a direction that doesn't match
 pubDate: 2026-08-10
 category: "Fuel Prices"
 tags: ["rupee vs dollar", "USD INR", "currency fluctuation", "fuel pricing", "petrol prices"]
+heroImage: "/blog-images/rupee-vs-dollar-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 A few months back I remember checking crude oil prices out of habit — I do this sometimes because I like knowing why my petrol bill looks the way it does — and Brent crude was actually down for the week. Cheaper oil, I thought, great, maybe the rate at my local pump drops a bit.

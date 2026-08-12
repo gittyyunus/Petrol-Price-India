@@ -28,11 +28,21 @@ const articleURL = `${siteURL}/blog/${post.id}/`;
 const publishedISO = post.data.pubDate.toISOString();
 const modifiedISO = (post.data.updatedDate ?? post.data.pubDate).toISOString();
 
+const heroImage = post.data.heroImage
+  ? {
+      "@type": "ImageObject",
+      "url": `${siteURL}${post.data.heroImage}`,
+      ...(post.data.heroImageWidth ? { "width": post.data.heroImageWidth } : {}),
+      ...(post.data.heroImageHeight ? { "height": post.data.heroImageHeight } : {})
+    }
+  : undefined;
+
 const articleSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": post.data.title,
   "description": post.data.description,
+  "image": heroImage,
   "author": {
     "@type": "Person",
     "name": "Yunus",
@@ -57,7 +67,7 @@ const articleSchema = {
 };
 ---
 
-<Base title={fullTitle} description={post.data.description} articlePublishedTime={publishedISO} articleModifiedTime={modifiedISO}>
+<Base title={fullTitle} description={post.data.description} articlePublishedTime={publishedISO} articleModifiedTime={modifiedISO} ogImage={post.data.heroImage}>
   {articleSchema && <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />}
   <Navbar />
 
@@ -88,6 +98,19 @@ const articleSchema = {
         <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-ink mb-4 leading-tight">{post.data.title}</h1>
         <p class="text-lg text-body leading-relaxed">{post.data.description}</p>
       </header>
+
+      {
+        post.data.heroImage && (
+          <img
+            src={post.data.heroImage}
+            alt={post.data.title}
+            width={post.data.heroImageWidth}
+            height={post.data.heroImageHeight}
+            class="w-full h-auto rounded-xl border border-hairline mb-10"
+            loading="eager"
+          />
+        )
+      }
 
       <div class="prose-text space-y-5">
         <Content />
