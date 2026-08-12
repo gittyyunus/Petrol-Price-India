@@ -4,6 +4,9 @@ description: "Real math on the EV versus petrol decision in India — upfront pr
 pubDate: 2026-08-10
 category: "Fuel Prices"
 tags: ["EV vs petrol", "EV ownership cost", "EV charging", "total cost of ownership", "car buying"]
+heroImage: "/blog-images/ev-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 A colleague of mine spent about three weekends test driving EVs earlier this year, came back each time more confused than before, and finally just messaged me one night: "just tell me straight, will I actually save money or is this a trap for people who feel guilty about petrol prices."

@@ -4,6 +4,9 @@ description: "A real, measured breakdown of the driving habits that actually imp
 pubDate: 2026-08-08
 category: "Fuel Prices"
 tags: ["mileage", "fuel savings", "driving habits", "fuel economy", "petrol"]
+heroImage: "/blog-images/fuel-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 Last year I sat down with six months of fuel receipts because my wife kept asking why we were spending almost ₹6,500 a month on petrol for a car we barely used on weekends. I genuinely thought the number was wrong. Same car, same routes, same office commute — so why was I filling up almost every four days?

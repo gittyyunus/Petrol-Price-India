@@ -4,6 +4,9 @@ description: "A real look at why petrol prices differ from state to state — ho
 pubDate: 2026-08-10
 category: "Fuel Prices"
 tags: ["petrol prices", "state VAT", "fuel tax", "petrol", "diesel"]
+heroImage: "/blog-images/tax-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 # State-Wise Petrol Price Ranking 2026: Which Indian States Pay the Most (and Least) Tax on Fuel

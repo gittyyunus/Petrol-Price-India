@@ -4,6 +4,9 @@ description: "A plain-language breakdown of the real mechanism behind India's da
 pubDate: 2026-08-08
 category: "Fuel Prices"
 tags: ["petrol prices", "6 AM price update", "OMC pricing", "crude basket", "rolling average"]
+heroImage: "/blog-images/omc-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1597
 ---
 
 A few months back I set a price alert on my fuel app before a road trip, planning to fill up right before leaving at 7 AM. When I checked the price the night before it was ₹101.90. By the time I actually reached the pump the next morning, it had already ticked up to ₹102.12. Twenty-two paise doesn't sound like much, but it genuinely confused me — nothing dramatic had happened overnight, no news headline, nothing. So why did the number move at all?

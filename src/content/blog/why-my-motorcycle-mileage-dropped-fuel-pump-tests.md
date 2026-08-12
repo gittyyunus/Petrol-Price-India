@@ -4,6 +4,9 @@ description: "When my Activa's mileage dropped for no reason and my mechanic fou
 pubDate: 2026-08-09
 category: "Fuel Prices"
 tags: ["fuel adulteration", "fuel pump", "fuel quality", "mileage drop", "petrol"]
+heroImage: "/blog-images/bike-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 My Activa used to give me a steady 45-ish km/l. Then one month it dropped to about 36, and stayed there for almost three weeks. I changed nothing. Same route, same riding style, same tyre pressure — I'd actually started checking that after writing about mileage habits earlier. I got the carburetor checked, the mechanic found nothing wrong, and I was genuinely stumped.

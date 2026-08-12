@@ -4,6 +4,9 @@ description: "The ₹8-15 per litre gap between Indian states isn't the fuel —
 pubDate: 2026-08-09
 category: "Fuel Prices"
 tags: ["state VAT", "border hopping", "fuel pricing", "petrol", "fuel savings"]
+heroImage: "/blog-images/petrol-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 A couple of years ago I drove from Delhi to Jaipur for a wedding, and somewhere past the Haryana-Rajasthan border I noticed my Fastag toll receipt and my fuel receipt from the same trip sitting next to each other in my glovebox. Out of pure curiosity I compared the petrol price I'd paid at a pump just before the border with what a friend in Jaipur was paying that same week. The difference was almost ₹9 a litre. Same brand, same fuel, same week — just a different state line.

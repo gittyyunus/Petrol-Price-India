@@ -4,6 +4,9 @@ description: "I tested every fuel price app and website I could find for about t
 pubDate: 2026-08-09
 category: "Fuel Prices"
 tags: ["fuel price apps", "Fuel@IOC", "HP Pay", "SmartDrive", "petrol price apps"]
+heroImage: "/blog-images/app-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 A few months ago I was about to leave for a long drive and wanted to check that day's fuel rate before heading out. I opened what I thought was a reliable app, saw a number, filled up based on it, and then noticed at the pump that the actual price was almost ₹2 higher than what the app showed. Turned out the app hadn't updated in three days, and I hadn't even checked the "last updated" timestamp because I didn't know these apps could lag that much.

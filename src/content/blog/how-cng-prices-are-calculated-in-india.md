@@ -4,6 +4,9 @@ description: "A real breakdown of what actually drives CNG pricing — the gas i
 pubDate: 2026-08-11
 category: "Fuel Prices"
 tags: ["CNG", "excise duty", "state VAT", "natural gas", "fuel pricing"]
+heroImage: "/blog-images/CNG-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 A friend who just switched his car to CNG called me last week, annoyed. "I thought CNG was supposed to be the cheap, tax-free option," he said. "So why did the price still jump ₹3 overnight, same as petrol does?"

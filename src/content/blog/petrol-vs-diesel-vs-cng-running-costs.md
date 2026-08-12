@@ -4,6 +4,9 @@ description: "Real cost-per-kilometre math for petrol, diesel, and CNG — inclu
 pubDate: 2026-08-07
 category: "Fuel Prices"
 tags: ["petrol", "diesel", "CNG", "cost per km", "car buying"]
+heroImage: "/blog-images/last-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1635
 ---
 
 Three years ago I was standing at a car dealership in Delhi, completely stuck. The sales guy kept pushing the CNG variant of the hatchback I liked, saying "sir, aap paisa bachayenge" (you'll save money), while my dad kept saying diesel is what "serious" buyers get. I ended up buying the petrol version out of sheer indecision, and honestly, I regretted not doing the math properly before signing the papers.

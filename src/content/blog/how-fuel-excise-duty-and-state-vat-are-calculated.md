@@ -4,6 +4,9 @@ description: "A real, step-by-step breakdown of how Indian fuel prices are built
 pubDate: 2026-08-07
 category: "Fuel Prices"
 tags: ["excise duty", "state VAT", "fuel pricing", "petrol", "diesel"]
+heroImage: "/blog-images/calc-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 Last month my brother-in-law messaged our family group asking why petrol in his city was ₹8 more expensive than mine, even though we live barely 200 km apart. Everyone had a theory — "dealer commission," "transport cost," "your city has better roads so it costs more" (that one made no sense, but okay). Nobody actually knew the real answer.
