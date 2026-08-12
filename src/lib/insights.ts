@@ -69,7 +69,7 @@ const priceOf = (row: InsightRow | undefined, key: string): number | null => {
   return Number(v);
 };
 
-const highLow = (history: InsightRow[], key: string): { high: number; low: number } | null => {
+export const highLow = (history: InsightRow[], key: string): { high: number; low: number } | null => {
   const values = history
     .map((r) => priceOf(r, key))
     .filter((v): v is number => v !== null);
@@ -167,30 +167,55 @@ function aboutSection(ctx: InsightContext): InsightSection {
   };
 }
 
-/** Compare this city to its nearest neighbours using real prices. */
-function nearbySection(ctx: InsightContext): InsightSection {
+export type NearbyComparison = {
+  price: number;
+  cheapest: { city: string; price: number };
+  priciest: { city: string; price: number };
+  diff: number;
+  hasMoreCities: boolean;
+};
+
+/** Cheapest/priciest nearby city and the price gap, from real data. Returns
+ * null when the city's own price or enough neighbouring data is missing. */
+export function computeNearbyComparison(ctx: InsightContext): NearbyComparison | null {
   const price = priceOf(ctx.latest, ctx.priceKey);
+  if (!price) return null;
+
   const priced = ctx.nearby
     .map((n) => ({ city: n.city_name, p: Number(n[ctx.priceKey]) }))
     .filter((n) => Number.isFinite(n.p) && n.p > 0);
+  if (priced.length === 0) return null;
+
+  const cheapest = priced.reduce((a, b) => (b.p < a.p ? b : a));
+  const priciest = priced.reduce((a, b) => (b.p > a.p ? b : a));
+
+  return {
+    price,
+    cheapest,
+    priciest,
+    diff: price - cheapest.p,
+    hasMoreCities: priced.length > 1,
+  };
+}
+
+/** Compare this city to its nearest neighbours using real prices. */
+function nearbySection(ctx: InsightContext): InsightSection {
+  const cmp = computeNearbyComparison(ctx);
 
   const paragraphs: string[] = [];
 
-  if (!price || priced.length === 0) {
+  if (!cmp) {
     paragraphs.push(
       `There isn't enough neighbouring data synced yet to draw a fair comparison for ${ctx.cityName}. Check back tomorrow when the daily refresh has settled.`,
     );
     return { heading: `How ${ctx.cityName} Compares to Nearby Cities`, paragraphs };
   }
 
-  const cheapest = priced.reduce((a, b) => (b.p < a.p ? b : a));
-  const priciest = priced.reduce((a, b) => (b.p > a.p ? b : a));
-  const diff = price - cheapest.p;
-  const nearestName = cheapest.city;
+  const { price, cheapest, priciest, diff, hasMoreCities } = cmp;
 
   if (diff > 0.05) {
     paragraphs.push(
-      `Around ${ctx.cityName}, the cheapest recorded today is ${nearestName} at ${inr(cheapest.p)} ${ctx.unitLabel}. Filling up there instead of ${ctx.cityName} saves about ${inr(diff)} ${ctx.unitLabel} — roughly ${inr(diff * 40)} on a typical 40-litre tank.`,
+      `Around ${ctx.cityName}, the cheapest recorded today is ${cheapest.city} at ${inr(cheapest.p)} ${ctx.unitLabel}. Filling up there instead of ${ctx.cityName} saves about ${inr(diff)} ${ctx.unitLabel} — roughly ${inr(diff * 40)} on a typical 40-litre tank.`,
     );
   } else {
     paragraphs.push(
@@ -198,7 +223,7 @@ function nearbySection(ctx: InsightContext): InsightSection {
     );
   }
 
-  if (priced.length > 1 && ctx.cityName !== priciest.city) {
+  if (hasMoreCities && ctx.cityName !== priciest.city) {
     paragraphs.push(
       `On the other end, ${priciest.city} is the highest-priced of the nearby cities at ${inr(priciest.p)} ${ctx.unitLabel} — usually a reflection of depot distance and small local levies rather than any single cause.`,
     );

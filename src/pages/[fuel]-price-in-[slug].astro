@@ -5,7 +5,7 @@ import Footer from '../components/Footer.astro';
 import PriceCard from '../components/PriceCard.astro';
 import { supabase } from '../lib/supabase';
 import { formatDate, formatChange } from '../lib/utils';
-import { buildCityInsights } from '../lib/insights';
+import { buildCityInsights, computeNearbyComparison, highLow } from '../lib/insights';
 import { Share2, Info, ChevronRight, MapPin, ArrowUpDown } from '@lucide/astro';
 
 const { fuel, slug } = Astro.params;
@@ -35,6 +35,26 @@ const CITY_ALIASES = {
 };
 
 const targetSlug = CITY_ALIASES[slug] || slug;
+
+// Legacy slugs that no longer resolve to a live city or state page:
+// - 'pondicherry' state slug was merged into 'puducherry'
+// - Delhi localities that were never real cities but had live/indexed pages
+// Redirect them (301) to their canonical page so old URLs don't become 404s.
+const LEGACY_REDIRECTS: Record<string, string> = {
+  'pondicherry': 'puducherry',
+  'saket': 'delhi',
+  'shahdara': 'delhi',
+  'preet-vihar': 'delhi',
+  'vasant-vihar': 'delhi',
+  'rajouri-garden': 'delhi',
+  'sadar-bazar': 'delhi',
+  'kanjhawala': 'delhi',
+};
+
+const legacyRedirectTarget = LEGACY_REDIRECTS[slug] ?? LEGACY_REDIRECTS[targetSlug];
+if (legacyRedirectTarget) {
+  return Astro.redirect(`/${fuel}-price-in-${legacyRedirectTarget}`, 301);
+}
 
 // Check if slug is a city
 const { data: city } = await supabase
@@ -112,7 +132,7 @@ if (type === 'city') {
   title = `${fuelLabel} Price in ${city.city_name} Today (${formatDate(today)}) — ₹${latestPrice?.[priceKey] || 'XX.XX'}/Litre`;
   description = `Today's ${fuel} price in ${city.city_name} is ₹${latestPrice?.[priceKey] || 'XX.XX'} per litre (${(latestPrice?.[changeKey] || 0) >= 0 ? '+' : ''}${latestPrice?.[changeKey] || '0.00'} from yesterday). Check 30-day price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}.`;
 
-  cityInsights = buildCityInsights({
+  const insightCtx = {
     cityName: city.city_name,
     stateName: city.state_name,
     fuel,
@@ -124,7 +144,29 @@ if (type === 'city') {
     yesterday: yesterdayPrice,
     history: priceHistory,
     nearby: nearbyPrices || [],
-  });
+  };
+
+  cityInsights = buildCityInsights(insightCtx);
+
+  const highLowFaqText = (() => {
+    const hl = highLow(priceHistory, priceKey);
+    if (!hl) return `We don't have enough recorded history for ${city.city_name} yet to state a reliable 30-day high and low.`;
+    if (hl.high === hl.low) return `In the last 30 days, the ${fuelLabel} price in ${city.city_name} has not moved, holding at ₹${hl.high.toFixed(2)} per litre the entire window.`;
+    return `In the last 30 days, the highest ${fuelLabel} price in ${city.city_name} was ₹${hl.high.toFixed(2)} per litre and the lowest was ₹${hl.low.toFixed(2)} per litre.`;
+  })();
+
+  const nearbyFaqText = (() => {
+    const cmp = computeNearbyComparison(insightCtx);
+    if (!cmp) return `There isn't enough neighbouring data synced yet to draw a fair comparison for ${city.city_name}. Check back tomorrow when the daily refresh has settled.`;
+    const { price, cheapest, priciest, diff, hasMoreCities } = cmp;
+    let text = diff > 0.05
+      ? `Nearby, the cheapest ${fuelLabel} today is ${cheapest.city} at ₹${cheapest.p.toFixed(2)} per litre — filling up there instead of ${city.city_name} saves about ₹${diff.toFixed(2)} per litre (roughly ₹${(diff * 40).toFixed(2)} on a 40-litre tank).`
+      : `Within a short drive of ${city.city_name}, prices are essentially level — the nearest city in our data comes in within a few paise of ₹${price.toFixed(2)} per litre.`;
+    if (hasMoreCities && city.city_name !== priciest.city) {
+      text += ` On the other end, ${priciest.city} is the highest-priced of the nearby cities at ₹${priciest.p.toFixed(2)} per litre.`;
+    }
+    return text;
+  })();
 
   faqSchema = {
     "@context": "https://schema.org",
@@ -167,7 +209,15 @@ if (type === 'city') {
         "name": `What was the highest and lowest ${fuelLabel} price in ${city.city_name} in the last 30 days?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `In the last 30 days, the highest ${fuelLabel} price in ${city.city_name} was ₹${priceHistory.length > 0 ? Math.max(...priceHistory.map(p => p[priceKey] || 0)).toFixed(2) : 'N/A'} and the lowest was ₹${priceHistory.length > 0 ? Math.min(...priceHistory.map(p => p[priceKey] || Infinity)).toFixed(2) : 'N/A'}.`
+          "text": highLowFaqText
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `How does the ${fuelLabel} price in ${city.city_name} compare to nearby cities?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": nearbyFaqText
         }
       }
     ]
@@ -399,8 +449,12 @@ if (type === 'state') {
                     <p class="text-sm text-body">Fuel rates in {city.city_name} are updated daily at 6:00 AM IST by Oil Marketing Companies (OMCs) like IOC, HPCL, and BPCL.</p>
                   </div>
                   <div class="border-b border-hairline pb-4 last:border-0">
-                    <h3 class="text-base font-bold text-ink mb-2">What was the 30-day high for {fuelLabel} in {city.city_name}?</h3>
-                    <p class="text-sm text-body">In the last 30 days, the highest recorded price in {city.city_name} was <strong>₹{priceHistory.length > 0 ? Math.max(...priceHistory.map(p => p[priceKey] || 0)).toFixed(2) : 'N/A'}</strong>.</p>
+                    <h3 class="text-base font-bold text-ink mb-2">What was the highest and lowest {fuelLabel} price in {city.city_name} in the last 30 days?</h3>
+                    <p class="text-sm text-body">{highLowFaqText}</p>
+                  </div>
+                  <div class="border-b border-hairline pb-4 last:border-0">
+                    <h3 class="text-base font-bold text-ink mb-2">How does the {fuelLabel} price in {city.city_name} compare to nearby cities?</h3>
+                    <p class="text-sm text-body">{nearbyFaqText}</p>
                   </div>
                 </div>
               </section>

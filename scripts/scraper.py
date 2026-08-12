@@ -59,6 +59,9 @@ CITY_NAME_FIXES = {
 CITY_STATE_FIXES = {
     "hyderabad": ("Telangana", "telangana"),
     "gurgaon": ("Haryana", "haryana"),
+    "pondicherry": ("Puducherry", "puducherry"),
+    "leh": ("Ladakh", "ladakh"),
+    "kargil": ("Ladakh", "ladakh"),
 }
 
 # Some city names repeat across states (Aurangabad in Bihar + Maharashtra,
