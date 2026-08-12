@@ -330,8 +330,8 @@ if (type === 'state') {
             <span class="text-ink">{city.city_name}</span>
           </nav>
           
-          <div class="grid lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 space-y-8">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 min-w-0 space-y-8">
               <section>
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                   <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-ink">
@@ -359,7 +359,7 @@ if (type === 'state') {
               
               <section class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm">
                 <h2 class="text-xl font-bold text-ink mb-6">30-Day {fuelLabel} Price Trend</h2>
-                <div class="h-64 sm:h-80 w-full relative"><canvas id="priceChart"></canvas></div>
+                <div class="h-64 sm:h-80 w-full relative"><canvas id="priceChart" class="max-w-full"></canvas></div>
               </section>
               
 {/* SEO Content Section */}
@@ -431,7 +431,7 @@ if (type === 'state') {
               </section>
             </div>
             
-            <div class="space-y-8">
+            <div class="min-w-0 space-y-8">
               <div class="bg-primary rounded-xl p-8 text-canvas shadow-lg">
                 <h3 class="text-lg font-semibold mb-6">Market Insight</h3>
                 <div class="space-y-6">
@@ -564,7 +564,7 @@ if (type === 'state') {
       {!type && (
         <div class="flex items-center justify-center py-20 px-4">
           <div class="max-w-md w-full text-center">
-            <h1 class="text-[12rem] font-bold leading-none text-ink/5 select-none">404</h1>
+            <h1 class="text-8xl sm:text-9xl lg:text-[12rem] font-bold leading-none text-ink/5 select-none">404</h1>
             <h2 class="text-3xl font-bold mb-4">City or state not found</h2>
             <p class="text-body mb-10 text-lg">
               We couldn't find fuel price data for "{slug}". It might be misspelled or not yet in our database.
@@ -593,7 +593,7 @@ if (type === 'state') {
               See <a href={`/${fuel}-price-in-india/`} class="font-semibold text-primary hover:underline">{fuelLabel} prices for all states in India</a> for a full national overview.
             </p>
           </header>
-          <div class="grid sm:grid-cols-3 gap-6 mb-12">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
             <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">State Average</p><p class="text-3xl font-bold text-ink">₹{avgPrice}<span class="text-sm font-normal text-mute ml-1">/L</span></p></div>
             <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm border-l-4 border-l-error"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">Highest Price</p><p class="text-3xl font-bold text-ink">₹{maxPrice?.[priceKey]?.toFixed(2) || 'N/A'}</p><p class="text-xs text-body mt-1">in {maxPrice?.city_name}</p></div>
             <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm border-l-4 border-l-success"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">Lowest Price</p><p class="text-3xl font-bold text-ink">₹{minPrice?.[priceKey]?.toFixed(2) || 'N/A'}</p><p class="text-xs text-body mt-1">in {minPrice?.city_name}</p></div>
