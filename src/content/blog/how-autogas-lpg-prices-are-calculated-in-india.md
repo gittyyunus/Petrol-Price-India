@@ -4,6 +4,9 @@ description: "A real breakdown of Autogas pricing — import parity cost, centra
 pubDate: 2026-08-11
 category: "Fuel Prices"
 tags: ["Autogas", "LPG", "excise duty", "state VAT", "fuel pricing"]
+heroImage: "/blog-images/LPG-1600.jpg"
+heroImageWidth: 1600
+heroImageHeight: 1067
 ---
 
 A cab driver I know switched his sedan to Autogas a couple of years back, mostly chasing the lower running cost. What surprised him wasn't the savings — those were real — it was that Autogas prices moved almost daily, the same way petrol does. He'd assumed, like a lot of people do, that any "alternative fuel" runs on some simpler, flatter pricing system. It doesn't.
