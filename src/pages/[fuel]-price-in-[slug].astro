@@ -100,6 +100,8 @@ let description = "";
 let faqSchema = null;
 let pageSchema = null;
 let cityInsights = [];
+let highLowFaqText = "";
+let nearbyFaqText = "";
 
 // --- City Logic ---
 let latestPrice, yesterdayPrice, priceHistory, nearbyPrices, nearbyCitiesList;
@@ -148,14 +150,14 @@ if (type === 'city') {
 
   cityInsights = buildCityInsights(insightCtx);
 
-  const highLowFaqText = (() => {
+  highLowFaqText = (() => {
     const hl = highLow(priceHistory, priceKey);
     if (!hl) return `We don't have enough recorded history for ${city.city_name} yet to state a reliable 30-day high and low.`;
     if (hl.high === hl.low) return `In the last 30 days, the ${fuelLabel} price in ${city.city_name} has not moved, holding at ₹${hl.high.toFixed(2)} per litre the entire window.`;
     return `In the last 30 days, the highest ${fuelLabel} price in ${city.city_name} was ₹${hl.high.toFixed(2)} per litre and the lowest was ₹${hl.low.toFixed(2)} per litre.`;
   })();
 
-  const nearbyFaqText = (() => {
+  nearbyFaqText = (() => {
     const cmp = computeNearbyComparison(insightCtx);
     if (!cmp) return `There isn't enough neighbouring data synced yet to draw a fair comparison for ${city.city_name}. Check back tomorrow when the daily refresh has settled.`;
     const { price, cheapest, priciest, diff, hasMoreCities } = cmp;
