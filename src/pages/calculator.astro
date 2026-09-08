@@ -7,7 +7,14 @@ import { Calculator as CalcIcon, Fuel, Navigation, Info, ChevronRight } from '@l
 
 const { data: cities } = await supabase.from('cities').select('id, city_name, city_slug');
 const today = new Date().toISOString().split('T')[0];
-const { data: prices } = await supabase.from('prices').select('*').eq('date', today);
+// Latest available price date, not UTC today — the scraper can lag a day.
+const { data: latestDateData } = await supabase
+  .from('prices')
+  .select('date')
+  .order('date', { ascending: false })
+  .limit(1);
+const dataDate = latestDateData?.[0]?.date ?? today;
+const { data: prices } = await supabase.from('prices').select('*').eq('date', dataDate);
 
 const howToSchema = {
   "@context": "https://schema.org",

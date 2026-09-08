@@ -11,19 +11,28 @@ import { formatPrice } from '../lib/utils';
 // Get today's date in ISO format
 const today = new Date().toISOString().split('T')[0];
 
+// Latest available price date — the scraper runs on IST and can lag the UTC
+// date, so every "today" query below uses this instead of `today`.
+const { data: latestDateData } = await supabase
+  .from('prices')
+  .select('date')
+  .order('date', { ascending: false })
+  .limit(1);
+const dataDate = latestDateData?.[0]?.date ?? today;
+
 // Fetch prices for major cities with their slugs
 const majorCityNames = ["Mumbai", "Delhi", "Bengaluru", "Chennai", "Hyderabad", "Kolkata", "Ahmedabad", "Pune"];
 const { data: majorCitiesData } = await supabase
   .from('prices')
   .select('*, cities!inner(city_slug, state_slug)')
   .in('city_name', majorCityNames)
-  .eq('date', today);
+  .eq('date', dataDate);
 
 // Fetch top movers with slugs
 const { data: topMoversUp } = await supabase
   .from('prices')
   .select('*, cities!inner(city_slug, state_slug)')
-  .eq('date', today)
+  .eq('date', dataDate)
   .gt('price_change', 0)
   .order('price_change', { ascending: false })
   .limit(3);
@@ -31,7 +40,7 @@ const { data: topMoversUp } = await supabase
 const { data: topMoversDown } = await supabase
   .from('prices')
   .select('*, cities!inner(city_slug, state_slug)')
-  .eq('date', today)
+  .eq('date', dataDate)
   .lt('price_change', 0)
   .order('price_change', { ascending: true })
   .limit(3);
@@ -49,6 +58,10 @@ const { data: statesData } = await supabase
 
 const uniqueStates = Array.from(new Set(statesData?.map(s => JSON.stringify(s))))
   .map(s => JSON.parse(s))
+  // 'pondicherry' is a legacy slug merged into 'puducherry' (301 redirect in
+  // [fuel]-price-in-[slug].astro). Never link it or the sitemap/page will
+  // expose duplicate state URLs.
+  .filter(s => s.state_slug !== 'pondicherry')
   .sort((a, b) => a.state_name.localeCompare(b.state_name));
 
 // Get a default city (Mumbai) for the hero card
@@ -72,8 +85,12 @@ const description = `Track fuel prices today in India. Get real-time updates for
 const priceText = (p?: { petrol_price?: number | null } | null) =>
   p?.petrol_price != null ? `₹${p.petrol_price.toFixed(2)}` : null;
 
-const delhiPriceText = priceText(delhiPrice) ?? 'not yet updated today';
-const bangalorePriceText = priceText(bangalorePrice) ?? 'not yet updated today';
+const delhiPriceText = priceText(delhiPrice);
+const bangalorePriceText = priceText(bangalorePrice);
+
+// Only show the movers section when there is at least one mover to show.
+// Fuel prices are often frozen for weeks, so both lists are regularly empty.
+const hasTopMovers = (topMoversUp?.length || 0) > 0 || (topMoversDown?.length || 0) > 0;
 
 const faqEntity = [
   {
@@ -108,22 +125,28 @@ const faqEntity = [
       "text": "The high cost of petrol in India is primarily due to heavy taxation, including Central Excise Duty and State Value Added Tax (VAT), which can make up nearly 50% of the final retail price."
     }
   },
-  {
-    "@type": "Question",
-    "name": "What is the current petrol price in Delhi?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": `As of today, the petrol price in Delhi is ${delhiPriceText} per litre.`
-    }
-  },
-  {
-    "@type": "Question",
-    "name": "What is the petrol price in Bangalore today?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": `Today's petrol price in Bangalore is ${bangalorePriceText} per litre.`
-    }
-  },
+  // City-specific answers are only published when today's price actually
+  // exists — never emit "not yet updated" placeholders into FAQ schema.
+  ...(delhiPriceText ? [
+    {
+      "@type": "Question",
+      "name": "What is the current petrol price in Delhi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": `As of today, the petrol price in Delhi is ${delhiPriceText} per litre.`
+      }
+    },
+  ] : []),
+  ...(bangalorePriceText ? [
+    {
+      "@type": "Question",
+      "name": "What is the petrol price in Bangalore today?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": `Today's petrol price in Bangalore is ${bangalorePriceText} per litre.`
+      }
+    },
+  ] : []),
   {
     "@type": "Question",
     "name": "What is the rate of 1 litre of petrol in India?",
@@ -328,14 +351,18 @@ const homepageSchema = {
             <h3 class="text-lg font-bold text-ink mb-2">Why is petrol price high in India?</h3>
             <p class="text-body">The high cost of petrol in India is primarily due to heavy taxation, including Central Excise Duty and State Value Added Tax (VAT), which can make up nearly 50% of the final retail price.</p>
           </div>
-          <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
-            <h3 class="text-lg font-bold text-ink mb-2">What is the current petrol price in Delhi?</h3>
-            <p class="text-body">As of today, the petrol price in Delhi is <strong>{delhiPriceText}</strong> per litre. Prices are updated every morning at 6:00 AM.</p>
-          </div>
-          <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
-            <h3 class="text-lg font-bold text-ink mb-2">What is the petrol price in Bangalore today?</h3>
-            <p class="text-body">Today's petrol price in Bangalore is <strong>{bangalorePriceText}</strong> per litre. You can track daily historical changes on our Bangalore-specific price page.</p>
-          </div>
+          {delhiPriceText && (
+            <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
+              <h3 class="text-lg font-bold text-ink mb-2">What is the current petrol price in Delhi?</h3>
+              <p class="text-body">As of today, the petrol price in Delhi is <strong>{delhiPriceText}</strong> per litre. Prices are updated every morning at 6:00 AM.</p>
+            </div>
+          )}
+          {bangalorePriceText && (
+            <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
+              <h3 class="text-lg font-bold text-ink mb-2">What is the petrol price in Bangalore today?</h3>
+              <p class="text-body">Today's petrol price in Bangalore is <strong>{bangalorePriceText}</strong> per litre. You can track daily historical changes on our Bangalore-specific price page.</p>
+            </div>
+          )}
           <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
             <h3 class="text-lg font-bold text-ink mb-2">What's the price of petrol in India now?</h3>
             <p class="text-body">The current price of petrol in India varies by location, typically ranging between ₹95 to ₹110. Major cities like Mumbai and Hyderabad often see higher rates due to state-level surcharges.</p>
@@ -344,7 +371,8 @@ const homepageSchema = {
       </div>
     </section>
 
-    {/* Top Movers */}
+    {/* Top Movers — hidden entirely when prices are frozen and both lists are empty */}
+    {hasTopMovers && (
     <section class="py-24 bg-canvas-soft border-b border-hairline">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col md:flex-row justify-between items-baseline gap-4 mb-12">
@@ -372,7 +400,7 @@ const homepageSchema = {
               </h3>
             </div>
             <div class="divide-y divide-hairline">
-              {topMoversUp?.map(item => (
+              {(topMoversUp?.length || 0) > 0 ? topMoversUp?.map(item => (
                 <a href={`/petrol-price-in-${item.cities.city_slug}`} class="px-6 py-4 flex justify-between items-center hover:bg-canvas-soft-2 transition-colors">
                   <div>
                     <p class="font-semibold text-ink">{item.city_name}</p>
@@ -383,7 +411,9 @@ const homepageSchema = {
                     <p class="text-xs text-mute font-mono">₹{item.petrol_price?.toFixed(2) || 'N/A'}</p>
                   </div>
                 </a>
-              ))}
+              )) : (
+                <p class="px-6 py-8 text-sm text-body">No increases recorded today — prices held steady.</p>
+              )}
             </div>
           </div>
           
@@ -394,7 +424,7 @@ const homepageSchema = {
               </h3>
             </div>
             <div class="divide-y divide-hairline">
-              {topMoversDown?.map(item => (
+              {(topMoversDown?.length || 0) > 0 ? topMoversDown?.map(item => (
                 <a href={`/petrol-price-in-${item.cities.city_slug}`} class="px-6 py-4 flex justify-between items-center hover:bg-canvas-soft-2 transition-colors">
                   <div>
                     <p class="font-semibold text-ink">{item.city_name}</p>
@@ -405,12 +435,15 @@ const homepageSchema = {
                     <p class="text-xs text-mute font-mono">₹{item.petrol_price?.toFixed(2) || 'N/A'}</p>
                   </div>
                 </a>
-              ))}
+              )) : (
+                <p class="px-6 py-8 text-sm text-body">No drops recorded today — prices held steady.</p>
+              )}
             </div>
           </div>
         </div>
       </div>
     </section>
+    )}
     
     {/* Major Cities Grid */}
     <section class="py-24 bg-canvas border-b border-hairline">

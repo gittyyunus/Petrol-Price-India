@@ -11,6 +11,7 @@ interface Props {
 	articlePublishedTime?: string;
 	articleModifiedTime?: string;
 	ogImage?: string;
+	noindex?: boolean;
 }
 
 const { 
@@ -18,7 +19,8 @@ const {
 	description = "Track daily petrol prices in India. Real-time updates, price history charts, and fuel cost calculator for all major cities and states.",
 	articlePublishedTime,
 	articleModifiedTime,
-	ogImage
+	ogImage,
+	noindex = false
 } = Astro.props;
 ---
 
@@ -63,6 +65,7 @@ const {
 		<meta property="twitter:image" content={new URL(ogImage ?? '/og-image.svg', Astro.site || 'https://petrolpriceindia.com')} />
 		
 		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site || 'https://petrolpriceindia.com')} />
+		{noindex && <meta name="robots" content="noindex, follow" />}
 		
 		<script type="application/ld+json">
 			{

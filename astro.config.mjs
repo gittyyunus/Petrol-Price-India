@@ -8,7 +8,7 @@ import sitemap from '@astrojs/sitemap';
 import cloudflare from '@astrojs/cloudflare';
 
 import { createClient } from '@supabase/supabase-js';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 try {
@@ -17,24 +17,44 @@ try {
   // .env file may not exist in production (secrets injected by Cloudflare)
 }
 
+const SITE = 'https://petrolpriceindia.com';
+const TODAY_ISO = new Date().toISOString().split('T')[0];
+
+// Per-URL lastmod values consumed by the sitemap `serialize` hook below.
+// Dynamic price pages are stamped with the latest price date from the DB;
+// blog pages with their file mtime.
+const lastmodMap = new Map();
+
+// Legacy slug merged into 'puducherry' (301 redirect). Never emit it.
+const LEGACY_SLUGS = new Set(['pondicherry']);
+
 // Read blog post slugs directly from the content directory so SSR blog routes
 // (`/blog/[slug]`) are included in the sitemap, since Astro's sitemap
 // integration only auto-includes statically generated pages.
 function getBlogUrls() {
   const blogDir = join(process.cwd(), 'src/content/blog');
-  const site = 'https://petrolpriceindia.com';
   const urls = [];
 
   try {
     const files = readdirSync(blogDir).filter((f) => f.endsWith('.md'));
 
     for (const file of files) {
-      const raw = readFileSync(join(blogDir, file), 'utf8');
+      const fullPath = join(blogDir, file);
+      const raw = readFileSync(fullPath, 'utf8');
       const draftMatch = raw.match(/^\s*draft\s*:\s*true\s*$/m);
       if (draftMatch) continue;
 
       const slug = file.replace(/\.md$/, '');
-      urls.push(`${site}/blog/${slug}/`);
+      const url = `${SITE}/blog/${slug}/`;
+      urls.push(url);
+
+      let lastmod = TODAY_ISO;
+      try {
+        lastmod = statSync(fullPath).mtime.toISOString().split('T')[0];
+      } catch {
+        // fall back to today
+      }
+      lastmodMap.set(url, lastmod);
     }
 
     urls.sort();
@@ -60,38 +80,110 @@ async function getDynamicUrls() {
 
     const { data: cities } = await supabase
       .from('cities')
-      .select('city_slug, state_slug');
+      .select('id, city_slug, state_slug');
 
     if (!cities || cities.length === 0) {
       console.warn('No cities found in database for sitemap');
       return [];
     }
 
-    const fuels = ['petrol', 'diesel', 'autogas', 'cng'];
-    const site = 'https://petrolpriceindia.com';
-    const urls = [];
-    const seen = new Set();
+    // Latest price date -> used as lastmod for all price pages.
+    let dataDate = TODAY_ISO;
+    try {
+      const { data: latest } = await supabase
+        .from('prices')
+        .select('date')
+        .order('date', { ascending: false })
+        .limit(1);
+      if (latest?.[0]?.date) dataDate = latest[0].date;
+    } catch {
+      // fall back to today
+    }
 
-    for (const city of cities) {
-      for (const fuel of fuels) {
-        if (city.city_slug) {
-          const url = `${site}/${fuel}-price-in-${city.city_slug}/`;
-          if (!seen.has(url)) {
-            urls.push(url);
-            seen.add(url);
-          }
+    // Coverage: CNG/Autogas are not sold in most cities. Only list those
+    // pages where the latest daily row actually has a price, so the sitemap
+    // doesn't advertise ~1000 empty template pages. Petrol/diesel are always
+    // listed. If coverage can't be determined, list petrol/diesel only.
+    const cngCityIds = new Set();
+    const autogasCityIds = new Set();
+    let coverageKnown = false;
+    try {
+      const { data: rows } = await supabase
+        .from('prices')
+        .select('city_id, cng_price, autogas_price')
+        .eq('date', dataDate)
+        .limit(5000);
+      if (rows && rows.length > 0) {
+        coverageKnown = true;
+        for (const r of rows) {
+          if (r.cng_price != null && Number(r.cng_price) > 0) cngCityIds.add(r.city_id);
+          if (r.autogas_price != null && Number(r.autogas_price) > 0) autogasCityIds.add(r.city_id);
         }
-        if (city.state_slug) {
-          const url = `${site}/${fuel}-price-in-${city.state_slug}/`;
-          if (!seen.has(url)) {
-            urls.push(url);
-            seen.add(url);
-          }
-        }
+      }
+    } catch (error) {
+      console.warn('Failed to fetch fuel coverage for sitemap:', error.message);
+    }
+
+    const cityIdToState = new Map(cities.map((c) => [c.id, c.state_slug]));
+    const statesWithCng = new Set();
+    const statesWithAutogas = new Set();
+    if (coverageKnown) {
+      for (const id of cngCityIds) {
+        const s = cityIdToState.get(id);
+        if (s && !LEGACY_SLUGS.has(s)) statesWithCng.add(s);
+      }
+      for (const id of autogasCityIds) {
+        const s = cityIdToState.get(id);
+        if (s && !LEGACY_SLUGS.has(s)) statesWithAutogas.add(s);
       }
     }
 
-    console.log(`Generated ${urls.length} dynamic sitemap URLs (${cities.length} cities, ${fuels.length} fuel types)`);
+    const urls = [];
+    const seen = new Set();
+    const push = (url) => {
+      if (!seen.has(url)) {
+        seen.add(url);
+        urls.push(url);
+        lastmodMap.set(url, dataDate);
+      }
+    };
+
+    const site = SITE;
+    const uniqueStates = [
+      ...new Set(cities.map((c) => c.state_slug).filter(Boolean)),
+    ].filter((s) => !LEGACY_SLUGS.has(s));
+
+    push('https://petrolpriceindia.com/petrol-price-in-india/');
+
+    for (const city of cities) {
+      if (!city.city_slug || LEGACY_SLUGS.has(city.city_slug)) continue;
+      push(`${site}/petrol-price-in-${city.city_slug}/`);
+      push(`${site}/diesel-price-in-${city.city_slug}/`);
+      if (coverageKnown && cngCityIds.has(city.id)) {
+        push(`${site}/cng-price-in-${city.city_slug}/`);
+      }
+      if (coverageKnown && autogasCityIds.has(city.id)) {
+        push(`${site}/autogas-price-in-${city.city_slug}/`);
+      }
+    }
+
+    for (const stateSlug of uniqueStates) {
+      push(`${site}/petrol-price-in-${stateSlug}/`);
+      push(`${site}/diesel-price-in-${stateSlug}/`);
+      if (coverageKnown && statesWithCng.has(stateSlug)) {
+        push(`${site}/cng-price-in-${stateSlug}/`);
+      }
+      if (coverageKnown && statesWithAutogas.has(stateSlug)) {
+        push(`${site}/autogas-price-in-${stateSlug}/`);
+      }
+    }
+
+    console.log(
+      `Generated ${urls.length} dynamic sitemap URLs (${cities.length} cities; ` +
+      `cng: ${cngCityIds.size} cities/${statesWithCng.size} states, ` +
+      `autogas: ${autogasCityIds.size} cities/${statesWithAutogas.size} states, ` +
+      `lastmod: ${dataDate})`,
+    );
     return urls;
   } catch (error) {
     console.warn('Failed to generate dynamic sitemap URLs:', error.message);
@@ -121,6 +213,22 @@ export default defineConfig({
 
   integrations: [sitemap({
     customPages: dynamicUrls,
+    // Defense in depth: never emit the legacy merged slug even if it slips
+    // in from auto-discovered routes.
+    filter: (page) => !page.includes('-pondicherry'),
+    serialize: (item) => {
+      const lastmod = lastmodMap.get(item.url) ?? TODAY_ISO;
+      const isHome = item.url === `${SITE}/`;
+      const isBlog = item.url.includes('/blog/');
+      const isHub = item.url.endsWith('-in-india/');
+      const isPetrolDiesel = item.url.includes('petrol-price-in-') || item.url.includes('diesel-price-in-');
+      return {
+        ...item,
+        lastmod,
+        changefreq: isBlog ? 'monthly' : 'daily',
+        priority: isHome ? 1.0 : isHub ? 0.9 : isPetrolDiesel ? 0.8 : isBlog ? 0.7 : 0.5,
+      };
+    },
   })],
 
   adapter: cloudflare(),

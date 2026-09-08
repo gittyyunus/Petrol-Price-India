@@ -6,8 +6,15 @@ import { supabase } from '../lib/supabase';
 import { Columns2, Plus, X, ArrowUpDown, TrendingUp, TrendingDown, ChevronRight } from '@lucide/astro';
 
 const today = new Date().toISOString().split('T')[0];
+// Latest available price date, not UTC today — the scraper can lag a day.
+const { data: latestDateData } = await supabase
+  .from('prices')
+  .select('date')
+  .order('date', { ascending: false })
+  .limit(1);
+const dataDate = latestDateData?.[0]?.date ?? today;
 const { data: cities } = await supabase.from('cities').select('*').order('city_name');
-const { data: latestPricesData } = await supabase.from('prices').select('*').eq('date', today);
+const { data: latestPricesData } = await supabase.from('prices').select('*').eq('date', dataDate);
 const latestPrices = latestPricesData || [];
 
 const title = "Compare Fuel Prices — Side-by-Side Comparison";

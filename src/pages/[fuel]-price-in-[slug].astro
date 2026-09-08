@@ -14,6 +14,14 @@ if (!fuel || !slug) {
   Astro.response.status = 404;
 }
 
+// Only these fuels have real price columns. Anything else is a 404
+// (prevents thin/empty pages like /foo-price-in-mumbai from indexing).
+const ALLOWED_FUELS = ['petrol', 'diesel', 'cng', 'autogas'];
+const isValidFuel = !!fuel && ALLOWED_FUELS.includes(fuel);
+if (!isValidFuel) {
+  Astro.response.status = 404;
+}
+
 const CITY_ALIASES = {
   'bangalore': 'bengaluru',
   'bombay': 'mumbai',
@@ -85,7 +93,7 @@ if (city) {
   }
 }
 
-if (!type) {
+if (!type || !isValidFuel) {
   Astro.response.status = 404;
 }
 
@@ -102,10 +110,15 @@ let pageSchema = null;
 let cityInsights = [];
 let highLowFaqText = "";
 let nearbyFaqText = "";
+let noindex = false;
 
 // --- City Logic ---
 let latestPrice, yesterdayPrice, priceHistory, nearbyPrices, nearbyCitiesList;
-if (type === 'city') {
+let hasPrice = false;
+let priceNum: number | null = null;
+let changeNum = 0;
+let priceDate = today;
+if (type === 'city' && isValidFuel) {
   const { data: priceData } = await supabase
     .from('prices')
     .select('*')
@@ -124,15 +137,40 @@ if (type === 'city') {
     .neq('id', city.id)
     .limit(6);
 
-  const { data: nbPrices } = await supabase
-    .from('prices')
-    .select('*')
-    .in('city_id', nearbyCitiesList.data?.map(c => c.id) || [])
-    .eq('date', today);
+  // Compare neighbours on the same date as this page's own latest reading, not
+  // on the server's UTC "today" — the scraper runs on IST and the UTC date can
+  // be a day ahead, which previously returned zero rows and forced the
+  // "not enough neighbouring data" fallback even for major cities.
+  const nearbyDate = latestPrice?.date ?? today;
+  const nearbyIds = nearbyCitiesList.data?.map(c => c.id) || [];
+  let nbPrices = [];
+  if (nearbyIds.length > 0) {
+    const { data } = await supabase
+      .from('prices')
+      .select('*')
+      .in('city_id', nearbyIds)
+      .eq('date', nearbyDate);
+    nbPrices = data || [];
+  }
   nearbyPrices = nbPrices;
 
-  title = `${fuelLabel} Price in ${city.city_name} Today (${formatDate(today)}) — ₹${latestPrice?.[priceKey] || 'XX.XX'}/Litre`;
-  description = `Today's ${fuel} price in ${city.city_name} is ₹${latestPrice?.[priceKey] || 'XX.XX'} per litre (${(latestPrice?.[changeKey] || 0) >= 0 ? '+' : ''}${latestPrice?.[changeKey] || '0.00'} from yesterday). Check 30-day price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}.`;
+  // Only publish price figures that actually exist. When this fuel has no
+  // recorded price for the city, fall back to copy without numbers so neither
+  // the visible page nor the JSON-LD schema ever shows "XX.XX" placeholders.
+  // NOTE: assigned to top-level `let`s (not `const`) so the template below can access them.
+  hasPrice = latestPrice?.[priceKey] != null && Number(latestPrice[priceKey]) > 0;
+  priceNum = hasPrice ? Number(latestPrice[priceKey]) : null;
+  changeNum = latestPrice?.[changeKey] != null ? Number(latestPrice[changeKey]) : 0;
+  // Display the date the price was actually recorded, not the server date —
+  // otherwise a stale scrape prints "Today (8 Sept)" next to Sept-6 data.
+  priceDate = latestPrice?.date ?? today;
+
+  title = hasPrice
+    ? `${fuelLabel} Price in ${city.city_name} Today (${formatDate(priceDate)}) — ₹${priceNum.toFixed(2)}/Litre`
+    : `${fuelLabel} Price in ${city.city_name} — 30-Day History, Trends & Comparison`;
+  description = hasPrice
+    ? `Today's ${fuel} price in ${city.city_name} is ₹${priceNum.toFixed(2)} per litre (${changeNum >= 0 ? '+' : ''}${changeNum.toFixed(2)} from yesterday). Check 30-day price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}.`
+    : `Check ${fuel} price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}. Updated for ${formatDate(priceDate)}.`;
 
   const insightCtx = {
     cityName: city.city_name,
@@ -174,22 +212,24 @@ if (type === 'city') {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
-      {
-        "@type": "Question",
-        "name": `What is the ${fuelLabel} price in ${city.city_name} today?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `The ${fuelLabel} price in ${city.city_name} today is ₹${latestPrice?.[priceKey]?.toFixed(2) || 'XX.XX'} per litre.`
-        }
-      },
-      {
-        "@type": "Question",
-        "name": `Is the ${fuel} price going up in ${city.city_name}?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `As of today, the ${fuel} price in ${city.city_name} is ₹${latestPrice?.[priceKey]?.toFixed(2) || 'XX.XX'}. Recent trends show a ${latestPrice?.[changeKey] > 0 ? 'rising' : 'fluctuating'} pattern depending on international crude rates.`
-        }
-      },
+      ...(hasPrice ? [
+        {
+          "@type": "Question",
+          "name": `What is the ${fuelLabel} price in ${city.city_name} today?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": `The ${fuelLabel} price in ${city.city_name} today is ₹${priceNum.toFixed(2)} per litre.`
+          }
+        },
+        {
+          "@type": "Question",
+          "name": `Is the ${fuel} price going up in ${city.city_name}?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": `As of today, the ${fuel} price in ${city.city_name} is ₹${priceNum.toFixed(2)}. Recent trends show a ${changeNum > 0 ? 'rising' : 'fluctuating'} pattern depending on international crude rates.`
+          }
+        },
+      ] : []),
       {
         "@type": "Question",
         "name": `Why is the ${fuel} price high in ${city.city_name}?`,
@@ -270,7 +310,7 @@ if (type === 'city') {
 
 // --- State Logic ---
 let citiesInState, prices, avgPrice, maxPrice, minPrice;
-if (type === 'state') {
+if (type === 'state' && isValidFuel) {
   const { data: cis } = await supabase
     .from('cities')
     .select('*')
@@ -279,11 +319,25 @@ if (type === 'state') {
 
   const cityIds = citiesInState?.map(c => c.id) || [];
 
+  // Use the latest available price date, not the server's UTC "today".
+  // The scraper runs on IST and can lag a day; filtering by UTC today
+  // emptied every state page ("0 Cities", ₹N/A) whenever data was stale.
+  let dataDate = today;
+  if (cityIds.length > 0) {
+    const { data: latestDateData } = await supabase
+      .from('prices')
+      .select('date')
+      .in('city_id', cityIds)
+      .order('date', { ascending: false })
+      .limit(1);
+    if (latestDateData?.[0]?.date) dataDate = latestDateData[0].date;
+  }
+
   const { data: prs } = await supabase
     .from('prices')
     .select('*')
     .in('city_id', cityIds)
-    .eq('date', today)
+    .eq('date', dataDate)
     .order('city_name', { ascending: true });
   prices = prs;
 
@@ -335,7 +389,7 @@ if (type === 'state') {
   };
 
   title = `${fuelLabel} Price in ${stateName} Today — Cities, Trends & Comparison`;
-  description = `Check ${fuel} prices in all cities of ${stateName}. Find the cheapest city, state average, and daily price changes for ${stateName}. Updated for ${formatDate(today)}.`;
+  description = `Check ${fuel} prices in all cities of ${stateName}. Find the cheapest city, state average, and daily price changes for ${stateName}. Updated for ${formatDate(dataDate)}.`;
 
   pageSchema = {
     "@context": "https://schema.org",
@@ -361,16 +415,29 @@ if (type === 'state') {
     ]
   };
 }
+
+// --- Indexing: petrol/diesel stay indexable; CNG/Autogas only when real data exists ---
+// CNG and Autogas are not sold in most cities, so those pages would be empty
+// templates. Keep them crawlable (follow) but out of the index until data exists.
+if (!isValidFuel || !type) {
+  noindex = true;
+} else if (fuel === 'cng' || fuel === 'autogas') {
+  if (type === 'city') {
+    noindex = !(priceHistory || []).some((r) => r?.[priceKey] != null && Number(r[priceKey]) > 0);
+  } else if (type === 'state') {
+    noindex = !(prices || []).some((r) => r?.[priceKey] != null && Number(r[priceKey]) > 0);
+  }
+}
 ---
 
-<Base title={title} description={description}>
+<Base title={title} description={description} noindex={noindex}>
   <Navbar />
   
   <main class="flex-1 bg-canvas-soft">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       
       {/* City View */}
-      {type === 'city' && (
+      {type === 'city' && isValidFuel && (
         <>
           <nav class="flex items-center gap-2 text-xs font-medium text-mute mb-8 overflow-x-auto whitespace-nowrap">
             <a href="/" class="hover:text-ink">Home</a>
@@ -434,14 +501,18 @@ if (type === 'state') {
               <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
                 <h2 class="text-2xl font-bold text-ink mb-6">Frequently Asked Questions — {city.city_name}</h2>
                 <div class="space-y-6">
-                  <div class="border-b border-hairline pb-4 last:border-0">
-                    <h3 class="text-base font-bold text-ink mb-2">What is the {fuelLabel} price in {city.city_name} today?</h3>
-                    <p class="text-sm text-body">The current {fuelLabel} price in {city.city_name} is <strong>₹{latestPrice?.[priceKey]?.toFixed(2) || 'XX.XX'}</strong> per litre as of {formatDate(today)}.</p>
-                  </div>
-                  <div class="border-b border-hairline pb-4 last:border-0">
-                    <h3 class="text-base font-bold text-ink mb-2">Is the {fuelLabel} price going up in {city.city_name}?</h3>
-                    <p class="text-sm text-body">Today's price shows a change of <strong>{formatChange(latestPrice?.[changeKey])}</strong> compared to yesterday. Recent trends indicate a {latestPrice?.[changeKey] > 0 ? 'rising' : 'stable'} market in {city.state_name}.</p>
-                  </div>
+                  {hasPrice && (
+                    <div class="border-b border-hairline pb-4 last:border-0">
+                      <h3 class="text-base font-bold text-ink mb-2">What is the {fuelLabel} price in {city.city_name} today?</h3>
+                      <p class="text-sm text-body">The current {fuelLabel} price in {city.city_name} is <strong>₹{priceNum.toFixed(2)}</strong> per litre as of {formatDate(priceDate)}.</p>
+                    </div>
+                  )}
+                  {hasPrice && (
+                    <div class="border-b border-hairline pb-4 last:border-0">
+                      <h3 class="text-base font-bold text-ink mb-2">Is the {fuelLabel} price going up in {city.city_name}?</h3>
+                      <p class="text-sm text-body">Today's price shows a change of <strong>{formatChange(latestPrice?.[changeKey])}</strong> compared to yesterday. Recent trends indicate a {changeNum > 0 ? 'rising' : 'stable'} market in {city.state_name}.</p>
+                    </div>
+                  )}
                   <div class="border-b border-hairline pb-4 last:border-0">
                     <h3 class="text-base font-bold text-ink mb-2">Why is {fuelLabel} expensive in {city.city_name}?</h3>
                     <p class="text-sm text-body">The retail price in {city.city_name} includes central excise duty, dealer commissions, and the state-level VAT specific to {city.state_name}.</p>
@@ -617,7 +688,7 @@ if (type === 'state') {
       )}
 
       {/* Not Found */}
-      {!type && (
+      {(!type || !isValidFuel) && (
         <div class="flex items-center justify-center py-20 px-4">
           <div class="max-w-md w-full text-center">
             <h1 class="text-8xl sm:text-9xl lg:text-[12rem] font-bold leading-none text-ink/5 select-none">404</h1>
@@ -633,7 +704,7 @@ if (type === 'state') {
       )}
 
       {/* State View */}
-      {type === 'state' && (
+      {type === 'state' && isValidFuel && (
         <>
           <nav class="flex items-center gap-2 text-xs font-medium text-mute mb-8">
             <a href="/" class="hover:text-ink">Home</a>
