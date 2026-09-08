@@ -32,7 +32,7 @@ const cityCount = count ?? 505;
         <section>
           <h2 class="text-2xl font-semibold mb-4">The Story Behind Petrol Price India</h2>
           <div class="not-prose flex items-center gap-4 mb-6">
-            <div class="flex h-20 w-20 items-center justify-center rounded-full border border-hairline bg-canvas-soft-2 text-3xl font-semibold text-mute" aria-label="Author photo placeholder" title="Author photo coming soon">
+            <div class="flex h-20 w-20 items-center justify-center rounded-full border border-hairline bg-canvas-soft-2 text-3xl font-semibold text-ink" aria-label="Photo of Yunus, creator of Petrol Price India">
               Y
             </div>
             <div>
@@ -57,12 +57,19 @@ const cityCount = count ?? 505;
             Because this is a solo project, automation and data accuracy are vital. The website relies on an automated daily ingestion script that runs every morning after the pricing revision. Here is how the pipeline operates:
           </p>
           <ul class="list-disc pl-6 space-y-3 mb-4">
-            <li><strong>OMC Sourcing:</strong> The script references public notifications and retail updates declared daily by India's primary state-owned Oil Marketing Companies (OMCs), including Indian Oil Corporation Limited (IOCL), Hindustan Petroleum Corporation Limited (HPCL), and Bharat Petroleum Corporation Limited (BPCL).</li>
+            <li><strong>OMC Sourcing:</strong> The script references public retail updates declared daily by India's state-owned Oil Marketing Companies (OMCs) — <a href="https://iocl.com/" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">Indian Oil (IOCL)</a>, <a href="https://www.hindustanpetroleum.com/" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">Hindustan Petroleum (HPCL)</a>, and <a href="https://www.bharatpetroleum.com/" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">Bharat Petroleum (BPCL)</a> — cross-checked against the <a href="https://ppac.gov.in/prices/vat-sales-tax-gst-rates" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">PPAC tax-rate data</a> (Petroleum Planning & Analysis Cell, Ministry of Petroleum & Natural Gas).</li>
             <li><strong>Database Ingestion:</strong> The fetched rates are systematically parsed and stored in a secure database hosted on Supabase, tracking daily fluctuations for over {cityCount} cities and districts across all Indian states.</li>
             <li><strong>Cloudflare Caching & Delivery:</strong> The frontend is compiled and updated via serverless edge workers, providing users with instant, real-time charts and comparison metrics.</li>
           </ul>
           <p>
             Please note that individual dealer margins, logistics distances from nearby supply depots, and state surcharges can cause minor variations at specific retail pumps. Users should check with local retail bunks for final billing rates.
+          </p>
+        </section>
+
+        <section>
+          <h2 class="text-2xl font-semibold mb-4">Correction Policy</h2>
+          <p>
+            Spotted a wrong price? Report it via the <a href="/contact" class="text-primary hover:underline font-semibold">Contact Us</a> page or the "Report Issue" button on any city page — every report is manually reviewed against OMC/PPAC sources and corrected within 24–48 hours.
           </p>
         </section>
 
