@@ -117,6 +117,22 @@ import { Mail } from '@lucide/astro';
           <script is:inline>
             window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
             formspree('initForm', { formElement: '#contact-form', formId: 'xoeavbgo' });
+            // Prefill from ?subject= & ?message= (e.g. Report Issue links on city pages)
+            (() => {
+              try {
+                const params = new URLSearchParams(window.location.search);
+                const subject = params.get('subject');
+                const message = params.get('message');
+                if (subject) {
+                  const sel = document.getElementById('subject');
+                  if (sel && [...sel.options].some((o) => o.value === subject)) sel.value = subject;
+                }
+                if (message) {
+                  const box = document.getElementById('message');
+                  if (box && !box.value) box.value = message;
+                }
+              } catch (e) { /* ignore */ }
+            })();
           </script>
           <script is:inline src="https://unpkg.com/@formspree/ajax@1" defer></script>
         </div>

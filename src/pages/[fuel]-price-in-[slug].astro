@@ -111,6 +111,7 @@ let cityInsights = [];
 let highLowFaqText = "";
 let nearbyFaqText = "";
 let noindex = false;
+let reportHref = "/contact";
 
 // --- City Logic ---
 let latestPrice, yesterdayPrice, priceHistory, nearbyPrices, nearbyCitiesList;
@@ -171,6 +172,8 @@ if (type === 'city' && isValidFuel) {
   description = hasPrice
     ? `Today's ${fuel} price in ${city.city_name} is ₹${priceNum.toFixed(2)} per litre (${changeNum >= 0 ? '+' : ''}${changeNum.toFixed(2)} from yesterday). Check 30-day price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}.`
     : `Check ${fuel} price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}. Updated for ${formatDate(priceDate)}.`;
+
+  reportHref = `/contact?subject=data&message=${encodeURIComponent(`Issue with ${fuelLabel} price in ${city.city_name} (/${fuel}-price-in-${city.city_slug}/): `)}`;
 
   const insightCtx = {
     cityName: city.city_name,
@@ -457,8 +460,9 @@ if (!isValidFuel || !type) {
                     {fuelLabel} Price in <span class="text-primary">{city.city_name}</span>
                   </h1>
                   <div class="flex gap-2">
-                    <button class="p-2 rounded-full border border-hairline bg-canvas hover:bg-canvas-soft-2 transition-colors"><Share2 class="w-4 h-4 text-body" /></button>
-                    <button class="flex items-center gap-2 px-4 py-2 rounded-full border border-hairline bg-canvas hover:bg-canvas-soft-2 transition-colors text-sm font-semibold"><Info class="w-4 h-4 text-body" /> Report Issue</button>
+                    <button id="shareBtn" type="button" aria-label="Share this page" title="Share this page" class="p-2 rounded-full border border-hairline bg-canvas hover:bg-canvas-soft-2 transition-colors cursor-pointer"><Share2 class="w-4 h-4 text-body pointer-events-none" /></button>
+                    <a href={reportHref} class="flex items-center gap-2 px-4 py-2 rounded-full border border-hairline bg-canvas hover:bg-canvas-soft-2 transition-colors text-sm font-semibold"><Info class="w-4 h-4 text-body" /> Report Issue</a>
+                    <span id="shareToast" role="status" class="hidden items-center px-3 py-2 rounded-full bg-ink text-canvas text-xs font-semibold">Link copied!</span>
                   </div>
                 </div>
                 <p class="text-sm text-body mb-6">
@@ -683,6 +687,54 @@ if (!isValidFuel || !type) {
                 }
               });
             }
+          </script>
+          <script is:inline>
+            (() => {
+              const btn = document.getElementById('shareBtn');
+              const toast = document.getElementById('shareToast');
+              if (!btn) return;
+              const showToast = (msg) => {
+                if (!toast) return;
+                toast.textContent = msg;
+                toast.classList.remove('hidden');
+                toast.classList.add('inline-flex');
+                window.clearTimeout(window.__shareToastT);
+                window.__shareToastT = window.setTimeout(() => {
+                  toast.classList.add('hidden');
+                  toast.classList.remove('inline-flex');
+                }, 2000);
+              };
+              btn.addEventListener('click', async () => {
+                const url = window.location.href;
+                const shareTitle = document.title;
+                const text = shareTitle;
+                if (navigator.share) {
+                  try {
+                    await navigator.share({ title: shareTitle, text, url });
+                  } catch (e) {
+                    // user dismissed — ignore
+                  }
+                  return;
+                }
+                try {
+                  await navigator.clipboard.writeText(url);
+                  showToast('Link copied!');
+                } catch (e) {
+                  // Last-resort fallback for old browsers
+                  const ta = document.createElement('textarea');
+                  ta.value = url;
+                  document.body.appendChild(ta);
+                  ta.select();
+                  try {
+                    document.execCommand('copy');
+                    showToast('Link copied!');
+                  } catch (_e) {
+                    showToast('Copy this URL: ' + url);
+                  }
+                  ta.remove();
+                }
+              });
+            })();
           </script>
         </>
       )}
