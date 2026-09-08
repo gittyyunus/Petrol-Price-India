@@ -1,0 +1,72 @@
+---
+// CalculatorEmbed: compact trip-cost calculator prefilled with this page's
+// live fuel price. Fully client-side; no extra DB fetch.
+import { Calculator as CalcIcon } from '@lucide/astro';
+
+interface Props {
+  cityName?: string;
+  fuel?: string;
+  fuelLabel?: string;
+  price?: number | null;
+}
+
+const { cityName = '', fuel = 'petrol', fuelLabel = 'Petrol', price = null } = Astro.props;
+const unit = fuel === 'cng' ? 'kg' : 'litre';
+const priceNum = price != null && Number(price) > 0 ? Number(price) : 0;
+---
+
+<section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm" id="trip-calculator">
+  <div class="flex items-center gap-3 mb-2">
+    <span class="inline-flex items-center justify-center p-2 bg-primary/5 rounded-lg"><CalcIcon class="w-5 h-5 text-primary" /></span>
+    <h2 class="text-xl font-bold text-ink">Trip cost calculator — {cityName}</h2>
+  </div>
+  <p class="text-sm text-body mb-6">
+    {priceNum > 0
+      ? `Uses today's ${fuelLabel} price in ${cityName} (₹${priceNum.toFixed(2)}/${unit}). Adjust distance and mileage for your trip.`
+      : `Enter your trip details below — today's ${fuelLabel} figure for ${cityName} is still syncing, so the calculator will activate once the price loads.`}
+    <a href="/calculator" class="font-semibold text-primary hover:underline ml-1">Full calculator</a>
+  </p>
+  <div class="grid sm:grid-cols-3 gap-4 mb-6">
+    <div>
+      <label for="embed-distance" class="block text-xs font-semibold text-ink mb-2">Distance (km)</label>
+      <input id="embed-distance" type="number" min="0" placeholder="e.g. 120" class="w-full h-11 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm" />
+    </div>
+    <div>
+      <label for="embed-mileage" class="block text-xs font-semibold text-ink mb-2">Mileage (km/{unit})</label>
+      <input id="embed-mileage" type="number" min="0" placeholder="e.g. 15" class="w-full h-11 px-4 rounded-lg border border-hairline bg-canvas-soft-2 focus:bg-canvas focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm" />
+    </div>
+    <div class="flex items-end">
+      <div class="w-full bg-primary rounded-lg px-4 py-2.5 text-canvas">
+        <p class="text-[10px] font-mono uppercase tracking-widest text-canvas/60">Est. cost</p>
+        <p class="text-xl font-bold" id="embed-result">₹0.00</p>
+      </div>
+    </div>
+  </div>
+  <p class="text-xs text-mute" id="embed-breakup">
+    {priceNum > 0 ? `${fuelLabel} in ${cityName}: ₹${priceNum.toFixed(2)}/${unit}.` : 'Waiting for price…'}
+  </p>
+</section>
+
+<script is:inline define:vars={{ priceNum, fuelLabel, cityName, unit }}>
+  (() => {
+    const d = document.getElementById('embed-distance');
+    const m = document.getElementById('embed-mileage');
+    const r = document.getElementById('embed-result');
+    const b = document.getElementById('embed-breakup');
+    if (!d || !m || !r) return;
+    const calc = () => {
+      const dist = parseFloat(d.value) || 0;
+      const mil = parseFloat(m.value) || 0;
+      if (dist > 0 && mil > 0 && priceNum > 0) {
+        const litres = dist / mil;
+        const cost = litres * priceNum;
+        r.textContent = '₹' + cost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (b) b.textContent = `${litres.toFixed(2)} ${unit === 'kg' ? 'kg' : 'litres'} × ₹${priceNum.toFixed(2)}/${unit} (${fuelLabel} in ${cityName})`;
+      } else {
+        r.textContent = '₹0.00';
+      }
+    };
+    d.addEventListener('input', calc);
+    m.addEventListener('input', calc);
+  })();
+</script>

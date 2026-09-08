@@ -6,6 +6,11 @@ import PriceCard from '../components/PriceCard.astro';
 import { supabase } from '../lib/supabase';
 import { formatDate, formatChange } from '../lib/utils';
 import { buildCityInsights, computeNearbyComparison, highLow } from '../lib/insights';
+import { STATE_FUEL_DATA, MUMBAI_DELHI_EXPLAINER } from '../lib/stateFuelData';
+import { CITY_SPOTLIGHTS } from '../lib/citySpotlights';
+import { STATE_SPOTLIGHTS } from '../lib/stateSpotlights';
+import RelatedGuides from '../components/RelatedGuides.astro';
+import CalculatorEmbed from '../components/CalculatorEmbed.astro';
 import { Share2, Info, ChevronRight, MapPin, ArrowUpDown } from '@lucide/astro';
 
 const { fuel, slug } = Astro.params;
@@ -431,6 +436,18 @@ if (!isValidFuel || !type) {
     noindex = !(prices || []).some((r) => r?.[priceKey] != null && Number(r[priceKey]) > 0);
   }
 }
+
+// --- De-templated local content ---
+// City spotlight (top 30 hand-written) + state fuel/tax info (all states).
+// Falls back gracefully when a slug has no hand-written entry.
+const citySpotlight = type === 'city' && city ? CITY_SPOTLIGHTS[city.city_slug] ?? null : null;
+const cityStateInfo = type === 'city' && city ? STATE_FUEL_DATA[city.state_slug] ?? null : null;
+const stateInfo = type === 'state' && stateSlug ? STATE_FUEL_DATA[stateSlug] ?? null : null;
+const stateSpotlight = type === 'state' && stateSlug ? STATE_SPOTLIGHTS[stateSlug] ?? null : null;
+const showMumbaiDelhi =
+  (type === 'city' && city && (city.state_slug === 'maharashtra' || city.state_slug === 'delhi' || city.city_slug === 'mumbai' || city.city_slug === 'delhi')) ||
+  (type === 'state' && (stateSlug === 'maharashtra' || stateSlug === 'delhi'));
+const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : null;
 ---
 
 <Base title={title} description={description} noindex={noindex}>
@@ -500,6 +517,63 @@ if (!isValidFuel || !type) {
                   }
                 </article>
               </section>
+
+              {/* Local take: hand-written guide for top cities, state-tax fallback for the rest */}
+              {citySpotlight ? (
+                <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
+                  <p class="text-[10px] font-mono uppercase tracking-widest text-mute mb-2">Local guide — {city.city_name}</p>
+                  <h2 class="text-2xl font-bold text-ink mb-4">{citySpotlight.heading}</h2>
+                  {citySpotlight.paragraphs.map((p) => (
+                    <p class="text-body mb-3">{p}</p>
+                  ))}
+                </section>
+              ) : cityStateInfo && (
+                <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
+                  <p class="text-[10px] font-mono uppercase tracking-widest text-mute mb-2">Local guide — {city.state_name}</p>
+                  <h2 class="text-2xl font-bold text-ink mb-4">What sets {fuelLabel.toLowerCase()} prices in {city.city_name} apart</h2>
+                  <p class="text-body mb-3">
+                    {city.city_name} follows the {cityStateInfo.state} tax code: {fuel === 'diesel' ? cityStateInfo.vatDiesel : cityStateInfo.vatPetrol} on {fuelLabel.toLowerCase()}, applied on top of base price plus central excise and dealer commission. That state layer — not the refinery gate — is what separates {city.city_name} from Delhi (19.40% VAT on petrol) or Mumbai (25% + ₹5.12/L) on any given morning.
+                  </p>
+                  <p class="text-body mb-3">
+                    Supply runs through {cityStateInfo.depot}. {cityStateInfo.driver}
+                  </p>
+                  <p class="text-body">Compare the 30-day high/low and nearby-city table on this page before a full tank: in flat months timing does not matter, in moving months the 6 AM revision does.</p>
+                </section>
+              )}
+
+              {/* Tax + depot box with real VAT figures */}
+              {cityStateInfo && (
+                <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
+                  <h2 class="text-2xl font-bold text-ink mb-4">{city.state_name}: tax and supply in one glance</h2>
+                  <dl class="grid sm:grid-cols-3 gap-4 mb-4">
+                    <div class="border border-hairline rounded-xl p-4 bg-canvas-soft-2/40">
+                      <dt class="text-[10px] font-mono uppercase tracking-widest text-mute mb-1">Petrol VAT</dt>
+                      <dd class="text-sm font-bold text-ink">{STATE_FUEL_DATA[city.state_slug]?.vatPetrol ?? 'Set by state notification'}</dd>
+                    </div>
+                    <div class="border border-hairline rounded-xl p-4 bg-canvas-soft-2/40">
+                      <dt class="text-[10px] font-mono uppercase tracking-widest text-mute mb-1">Diesel VAT</dt>
+                      <dd class="text-sm font-bold text-ink">{STATE_FUEL_DATA[city.state_slug]?.vatDiesel ?? 'Set by state notification'}</dd>
+                    </div>
+                    <div class="border border-hairline rounded-xl p-4 bg-canvas-soft-2/40">
+                      <dt class="text-[10px] font-mono uppercase tracking-widest text-mute mb-1">Supplied via</dt>
+                      <dd class="text-sm font-semibold text-ink">{cityStateInfo.depot}</dd>
+                    </div>
+                  </dl>
+                  <p class="text-xs text-mute">Rates per PPAC VAT statement (as provided by OMCs). VAT applies on base + excise + dealer commission, so high-rate states amplify every crude move. <a href="/blog/how-fuel-excise-duty-and-state-vat-are-calculated/" class="font-semibold text-primary hover:underline">Full breakup</a></p>
+                  {showMumbaiDelhi && (
+                    <div class="mt-6 border-t border-hairline pt-6">
+                      <h3 class="text-lg font-bold text-ink mb-3">Why Mumbai pays more than Delhi</h3>
+                      {MUMBAI_DELHI_EXPLAINER.map((p) => (
+                        <p class="text-body mb-3 text-sm">{p}</p>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              <CalculatorEmbed cityName={city.city_name} fuel={fuel} fuelLabel={fuelLabel} price={embedPrice} />
+
+              <RelatedGuides fuel={fuel} />
 
               {/* Dynamic FAQ Section */}
               <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
@@ -802,6 +876,57 @@ if (!isValidFuel || !type) {
               </table>
             </div>
           </section>
+
+          {/* State guide: hand-written, unique per state */}
+          {stateSpotlight ? (
+            <section class="mt-12 bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
+              <p class="text-[10px] font-mono uppercase tracking-widest text-mute mb-2">State guide — {stateName}</p>
+              <h2 class="text-2xl font-bold text-ink mb-4">{stateSpotlight.heading}</h2>
+              {stateSpotlight.paragraphs.map((p) => (
+                <p class="text-body mb-3">{p}</p>
+              ))}
+            </section>
+          ) : stateInfo && (
+            <section class="mt-12 bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
+              <p class="text-[10px] font-mono uppercase tracking-widest text-mute mb-2">State guide — {stateName}</p>
+              <h2 class="text-2xl font-bold text-ink mb-4">How {fuelLabel.toLowerCase()} prices work in {stateName}</h2>
+              <p class="text-body mb-3">{stateInfo.driver}</p>
+              <p class="text-body">Supplied via {stateInfo.depot}. Compare the city table above before a long run — intra-state spreads are usually freight slivers, while the {stateName}–Delhi or {stateName}–Mumbai gap is almost entirely the VAT difference.</p>
+            </section>
+          )}
+
+          {stateInfo && (
+            <section class="mt-8 bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
+              <h2 class="text-2xl font-bold text-ink mb-4">{stateName}: tax and supply in one glance</h2>
+              <dl class="grid sm:grid-cols-3 gap-4 mb-4">
+                <div class="border border-hairline rounded-xl p-4 bg-canvas-soft-2/40">
+                  <dt class="text-[10px] font-mono uppercase tracking-widest text-mute mb-1">Petrol VAT</dt>
+                  <dd class="text-sm font-bold text-ink">{stateInfo.vatPetrol}</dd>
+                </div>
+                <div class="border border-hairline rounded-xl p-4 bg-canvas-soft-2/40">
+                  <dt class="text-[10px] font-mono uppercase tracking-widest text-mute mb-1">Diesel VAT</dt>
+                  <dd class="text-sm font-bold text-ink">{stateInfo.vatDiesel}</dd>
+                </div>
+                <div class="border border-hairline rounded-xl p-4 bg-canvas-soft-2/40">
+                  <dt class="text-[10px] font-mono uppercase tracking-widest text-mute mb-1">Supplied via</dt>
+                  <dd class="text-sm font-semibold text-ink">{stateInfo.depot}</dd>
+                </div>
+              </dl>
+              <p class="text-xs text-mute">Rates per PPAC VAT statement (as provided by OMCs). <a href="/blog/how-fuel-excise-duty-and-state-vat-are-calculated/" class="font-semibold text-primary hover:underline">Full breakup</a></p>
+              {showMumbaiDelhi && (
+                <div class="mt-6 border-t border-hairline pt-6">
+                  <h3 class="text-lg font-bold text-ink mb-3">Why Mumbai pays more than Delhi</h3>
+                  {MUMBAI_DELHI_EXPLAINER.map((p) => (
+                    <p class="text-body mb-3 text-sm">{p}</p>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          <div class="mt-8">
+            <RelatedGuides fuel={fuel} />
+          </div>
         </>
       )}
     </div>
