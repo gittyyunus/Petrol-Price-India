@@ -201,6 +201,11 @@ const dynamicUrls = [
 export default defineConfig({
   site: 'https://petrolpriceindia.com',
   output: 'server',
+  // Single canonical URL form: /page/ (sitemap + canonicals already use
+  // trailing slashes). Without this, /x and /x/ both serve 200 with
+  // self-referencing canonicals, which GSC reports as
+  // "Duplicate, Google chose different canonical than user".
+  trailingSlash: 'always',
 
   prefetch: {
     prefetchAll: true,
