@@ -167,8 +167,54 @@ const regionsWithCities = REGIONS.map((r) => ({
 
 const otherCities = (byRegion.get('other') ?? []).sort((a, b) => a.name.localeCompare(b.name));
 
-const title = "CNG Price in India Today — City-Wise Rates & Directory";
-const description = `Today's CNG price in India by state and city — a live ranking of city gas distributor rates, a full directory of CNG city pages grouped by region, and answers to common questions. Updated regularly.`;
+const displayCngCityName = (name: string) => name === "Bengaluru" ? "Bangalore" : name;
+
+const title = "CNG Price in India Today — Per Kg Rates, City Prices & Hike Tracker";
+const description = `Check today's CNG price per kg across India — Delhi, Mumbai, Bangalore, Pune & more. Live 1 kg CNG rates for ${citiesWithFuel.length || 500}+ cities, state rankings, history & trends.`;
+
+// Keyword-target cities for the live "CNG price per kg" table.
+const keywordCityNames = ["Delhi", "Mumbai", "Bengaluru", "Hyderabad", "Pune", "Kolkata", "Ahmedabad", "Jaipur", "Lucknow", "Ghaziabad", "Noida", "Chennai", "Indore", "Chandigarh"];
+const { data: keywordCitiesData } = await supabase
+  .from('prices')
+  .select('city_id, city_name, state_name, cng_price, cng_change')
+  .in('city_name', keywordCityNames)
+  .eq('date', dataDate)
+  .not('cng_price', 'is', null);
+
+const keywordCityOrder = ["Delhi", "Mumbai", "Bengaluru", "Hyderabad", "Pune", "Kolkata", "Ahmedabad", "Jaipur", "Lucknow", "Ghaziabad", "Noida", "Chennai", "Indore", "Chandigarh"];
+const slugByCityId = new Map(cities.map((c) => [c.id, c.city_slug]));
+const keywordCities = keywordCityOrder
+  .map((name) => {
+    const row = keywordCitiesData?.find((c) => c.city_name === name);
+    if (!row) return null;
+    return { ...row, city_slug: slugByCityId.get(row.city_id) ?? name.toLowerCase().replace(/ /g, '-') };
+  })
+  .filter((c): c is NonNullable<typeof c> => !!c);
+
+// Only show the movers-style table when there is data.
+const hasKeywordCities = keywordCities.length > 0;
+
+const priceText = (v?: number | null) => v != null ? `₹${Number(v).toFixed(2)}` : null;
+
+const kwPrice = (name: string) => {
+  const row = keywordCities?.find((c) => c.city_name === name);
+  return priceText(row?.cng_price);
+};
+
+const delhiCng = kwPrice("Delhi");
+const mumbaiCng = kwPrice("Mumbai");
+const bangaloreCng = kwPrice("Bengaluru") ?? kwPrice("Bangalore");
+const puneCng = kwPrice("Pune");
+const kolkataCng = kwPrice("Kolkata");
+const hyderabadCng = kwPrice("Hyderabad");
+const ahmedabadCng = kwPrice("Ahmedabad");
+const jaipurCng = kwPrice("Jaipur");
+const lucknowCng = kwPrice("Lucknow");
+const ghaziabadCng = kwPrice("Ghaziabad");
+const noidaCng = kwPrice("Noida");
+const chennaiCng = kwPrice("Chennai");
+const indoreCng = kwPrice("Indore");
+const chandigarhCng = kwPrice("Chandigarh");
 
 const faqEntity = [
   {
@@ -177,6 +223,44 @@ const faqEntity = [
     "acceptedAnswer": {
       "@type": "Answer",
       "text": `CNG prices in India are set by each city's gas distributor and vary by city rather than uniformly across the country. As of the latest update, the weighted average of our tracked cities is roughly ₹${weightedNationalAvg.toFixed(2)} per kg, ranging from about ₹${lowestState?.avg.toFixed(2)} in ${lowestState?.state} to about ₹${highestState?.avg.toFixed(2)} in ${highestState?.state}.`
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the CNG price per kg in Delhi today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": delhiCng
+        ? `Today's CNG price in Delhi is ${delhiCng} per kg. Delhi's CNG rate is set by Indraprastha Gas Limited (IGL), which also serves Noida, Ghaziabad, Gurugram and Faridabad. Prices are revised periodically rather than daily like petrol.`
+        : "Delhi's CNG price is set by IGL and revised periodically. Check the live table above for today's per-kg rate."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is 1 kg CNG price in Mumbai?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": mumbaiCng
+        ? `Today's 1 kg CNG price in Mumbai is ${mumbaiCng}. Mumbai's CNG is sold by Mahanagar Gas Limited (MGL), which covers Mumbai, Thane, Navi Mumbai and surrounding areas. CNG in Mumbai is sold by weight, not by litre.`
+        : "Mumbai's CNG price is set by MGL and revised periodically. CNG is sold by the kilogram — check the live table above for today's rate."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the CNG price in Bangalore today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": bangaloreCng
+        ? `Today's CNG price in Bangalore is ${bangaloreCng} per kg. Bangalore's CNG network has been expanding, with rates set by the local authorized gas distributor. Availability is still more limited than Delhi or Mumbai.`
+        : "Bangalore's CNG price is set by the city's authorized gas distributor. Coverage is expanding — check the live table above for today's rate."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the CNG price in Pune and Kolkata today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `Today's CNG price in Pune is ${puneCng ?? "set by the local distributor"} per kg, and in Kolkata it is ${kolkataCng ?? "set by the local distributor"} per kg. Pune is served on the Maharashtra gas network while Kolkata's CNG comes through West Bengal's licensed distributors.`
     }
   },
   {
@@ -209,6 +293,22 @@ const faqEntity = [
     "acceptedAnswer": {
       "@type": "Answer",
       "text": "Generally yes on a cost-per-kilometre basis. CNG is sold by kilogram and delivers better fuel economy than an equivalent petrol or diesel engine, so even before the per-kg price gap, running a CNG vehicle usually costs noticeably less per kilometre in cities where refueling is convenient."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the CNG price in Haryana, Punjab and UP?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `In Haryana, CNG is available mainly in Gurugram, Faridabad and Panipat through IGL's network, with rates similar to Delhi. In UP, cities like Lucknow, Kanpur, Agra, Ghaziabad and Noida (${ghaziabadCng && noidaCng ? `today's rates: Ghaziabad ${ghaziabadCng}/kg, Noida ${noidaCng}/kg` : "including Ghaziabad and Noida"}) are served largely by IGL and local distributors. Punjab's CNG coverage is narrower, concentrated around the Chandigarh–Mohali–Panchkula belt.`
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the CNG price in Kerala and Jaipur?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `Kerala's CNG network is still limited compared to North and West India, with availability mainly in Kochi and Thiruvananthapuram pilot areas — the state's high VAT structure applies where CNG is sold. In Rajasthan, the CNG price in Jaipur today is ${jaipurCng ?? "set by the local distributor"} per kg, served through the state's expanding CGD network.`
     }
   },
   {
@@ -345,6 +445,184 @@ const pageSchema = {
         <a href="/blog/how-fuel-excise-duty-and-state-vat-are-calculated/" class="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
           Read the full worked example on fuel pricing <ArrowRight class="w-4 h-4" />
         </a>
+      </section>
+
+      {/* Long-form SEO content */}
+      <section class="mb-12">
+        <div class="max-w-4xl mx-auto">
+          <article class="prose prose-neutral max-w-none">
+            <h2 class="text-3xl font-bold text-ink mb-6">CNG Price in India — Complete Guide to Per Kg Rates, City Prices & Trends</h2>
+            <p class="text-body mb-6">
+              The <strong>CNG price in India</strong> is one of the fastest-moving numbers in the country's fuel market — and one of the least understood. Unlike petrol and diesel, which are revised every morning at 6:00 AM under a nationwide mechanism, CNG is priced city by city by each licensed gas distributor, and it's sold by weight, not volume. If you've ever wondered why the <strong>CNG price per kg</strong> in Delhi is different from Mumbai, or why 1 kg of CNG costs what it does in your city, the answer sits in a mix of gas sourcing, compression costs, distributor margins, and state taxes — none of which follow the petrol playbook.
+            </p>
+            <p class="text-body mb-6">
+              This guide walks through how CNG pricing actually works, what today's rates look like across India's major cities, how your state's tax structure affects the number at the pump, and how CNG stacks up against petrol on a real cost-per-kilometre basis. Whether you drive a CNG car, run a fleet, or are considering converting from petrol, this is the full picture in one place.
+            </p>
+
+            <h2 class="text-3xl font-bold text-ink mb-6">How 1 Kg CNG Price Is Built in India</h2>
+            <p class="text-body mb-6">
+              A kilogram of CNG is built from four layers, and understanding them explains most of the city-to-city variation you'll see. First is the <strong class="text-ink">base gas cost</strong> — usually around three-quarters of the final price. City gas distributors (CGDs) like IGL, MGL, Gujarat Gas and Adani Total buy natural gas either from domestic sources under the government's Administered Price Mechanism, which is cheaper, or from imported liquefied natural gas (LNG), which tracks global gas markets and costs more. How much of each a city's distributor uses is the single biggest driver of the per-kg rate you pay.
+            </p>
+            <p class="text-body mb-6">
+              Second is <strong class="text-ink">compression and operating costs</strong>. Turning pipeline gas into vehicle fuel means compressing it to over 200 bar of pressure, which takes substantial electricity and purpose-built infrastructure. Running the compressor stations, maintaining the dispensers, and managing the station network all add to the cost. Third is the <strong class="text-ink">distributor's margin</strong> — the licensed CGD's own markup for operating the network. Fourth, and where the sharpest city-to-city swings come from, is <strong class="text-ink">state taxes</strong>: a central excise duty (percentage-based, unlike petrol's flat per-litre excise) plus each state's own VAT, layered on top of everything below.
+            </p>
+            <p class="text-body mb-6">
+              That VAT layer is why two cities an hour's drive apart can post meaningfully different CNG rates. A state that keeps VAT low to encourage CNG adoption will show a cheaper pump price than a high-VAT neighbour, even if the underlying gas cost is identical. Our <a href="/blog/how-cng-prices-are-calculated-in-india/" class="text-primary hover:underline font-semibold">full CNG pricing explainer</a> breaks down the arithmetic with worked examples.
+            </p>
+
+            <h2 class="text-3xl font-bold text-ink mb-6">Today's CNG Price per Kg in Major Cities</h2>
+            <p class="text-body mb-6">
+              Below is today's <strong>CNG price per kg</strong> for the cities people search for most — live from the latest distributor revisions. CNG is sold by weight across India, so every rate here is per kilogram, not per litre. Click any city to open its full page with recent history and comparisons.
+            </p>
+
+            {hasKeywordCities && (
+              <div class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm mb-10">
+                <div class="px-6 py-4 bg-canvas-soft-2 border-b border-hairline flex items-center justify-between">
+                  <h3 class="text-sm font-bold uppercase tracking-wider text-mute">CNG Price per Kg Today — Major Cities</h3>
+                  <span class="text-[10px] font-mono uppercase tracking-widest text-mute">₹ / Kg</span>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left">
+                    <thead class="bg-canvas-soft text-[10px] font-mono uppercase tracking-widest text-mute">
+                      <tr>
+                        <th class="px-6 py-3">City</th>
+                        <th class="px-6 py-3">State</th>
+                        <th class="px-6 py-3 text-right">1 Kg CNG Price</th>
+                        <th class="px-6 py-3 text-right">vs Last</th>
+                        <th class="px-6 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-hairline">
+                      {keywordCities.map((city) => {
+                        const chg = city.cng_change;
+                        return (
+                          <tr class="hover:bg-canvas-soft transition-colors group">
+                            <td class="px-6 py-4">
+                              <span class="text-sm font-semibold text-ink">{displayCngCityName(city.city_name)}</span>
+                            </td>
+                            <td class="px-6 py-4 text-xs text-mute">{city.state_name}</td>
+                            <td class="px-6 py-4 text-sm font-mono font-bold text-right">₹{city.cng_price?.toFixed(2) || 'N/A'}</td>
+                            <td class="px-6 py-4 text-sm font-mono text-right">
+                              <span class={chg > 0 ? 'text-error' : chg < 0 ? 'text-success' : 'text-mute'}>
+                                {chg > 0 ? '▲' : chg < 0 ? '▼' : '—'} {Math.abs(chg || 0).toFixed(2)}
+                              </span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                              <a href={`/cng-price-in-${city.city_slug}/`} class="inline-flex items-center gap-1 text-xs font-semibold text-mute group-hover:text-primary transition-colors">
+                                View <ArrowRight class="w-3 h-3" />
+                              </a>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="px-6 py-3 border-t border-hairline">
+                  <p class="text-xs text-mute">CNG rates are revised periodically by each city's distributor — typically every few days to a few weeks — rather than daily like petrol. <strong class="text-ink">1 kg CNG price</strong> figures above reflect the latest published rate for each city.</p>
+                </div>
+              </div>
+            )}
+
+            <h2 class="text-3xl font-bold text-ink mb-6">CNG Price in Delhi, Mumbai, Bangalore & Other Metro Cities</h2>
+            <p class="text-body mb-6">
+              India's big metros have the densest CNG networks — and some of the most-watched per-kg rates in the country. Here's what drives the <strong>CNG price</strong> in each major city, and what it means if you actually fuel there.
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in Delhi — IGL's Network, the National Benchmark</h3>
+            <p class="text-body mb-6">
+              The <strong>CNG price in Delhi today</strong> is the number most other North Indian cities are measured against. Delhi's CNG is sold by Indraprastha Gas Limited (IGL), which also serves Noida, Ghaziabad, Gurugram, Faridabad and a wide swathe of the NCR. IGL's pricing reflects its mix of domestic APM gas and imported LNG, plus compression costs at its station network, before central excise and Delhi's state VAT are applied. Because Delhi's overall fuel-tax structure is moderate by national standards — the same low-VAT advantage that keeps its petrol cheap relative to Mumbai — CNG here typically lands mid-pack nationally, cheaper than high-tax states but not the cheapest in India. For NCR commuters, the practical point is that the <strong>CNG price in Noida</strong> ({noidaCng ?? "on the IGL network"}) and the <strong>CNG price in Ghaziabad</strong> ({ghaziabadCng ?? "on the IGL network"}) are set by the same IGL network as Delhi and usually track within a narrow band — there's no meaningful cross-border arbitrage inside the NCR. <a href="/cng-price-in-delhi/" class="text-primary hover:underline font-semibold">Delhi CNG price page →</a>
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in Mumbai — MGL's Network Across the Metro</h3>
+            <p class="text-body mb-6">
+              The <strong>CNG price in Mumbai today</strong> ({mumbaiCng ?? "set by MGL"}) is set by Mahanagar Gas Limited (MGL), which covers Mumbai, Thane, Navi Mumbai and surrounding areas. MGL's CNG pricing follows the same four-layer structure — gas cost, compression, margin, taxes — but Maharashtra's tax stack applies on top, the same structure that makes the state's petrol among India's most expensive. MGL has one of the country's most mature CNG networks, which keeps compression and distribution costs relatively efficient per kg, but the state VAT layer still shows up in the final number. Mumbai's rate typically sits above Delhi's and serves as a reference point for the western corridor. <a href="/cng-price-in-mumbai/" class="text-primary hover:underline font-semibold">Mumbai CNG price page →</a>
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in Bangalore — Expanding Network, Growing Supply</h3>
+            <p class="text-body mb-6">
+              The <strong>CNG price in Bangalore today</strong> ({bangaloreCng ?? "set by the local distributor"}) reflects a network that has been scaling up over the past few years. Bangalore's CNG infrastructure is newer than Delhi's or Mumbai's, which means the fixed costs of building out compressor stations are spread across a still-growing volume — a factor that can keep per-kg rates slightly higher than in fully mature networks. Karnataka's tax structure applies on top of the gas cost, and the state's relatively high sales-tax environment (the same one behind its petrol prices) flows through to CNG where VAT is charged. Availability, more than price, has historically been Bangalore's CNG constraint — but the network keeps expanding, and the rate today is worth comparing against petrol if you're weighing a conversion. <a href="/cng-price-in-bangalore/" class="text-primary hover:underline font-semibold">Bangalore CNG price page →</a>
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in Pune, Kolkata & Hyderabad</h3>
+            <p class="text-body mb-6">
+              Pune's CNG ({puneCng ?? "set by the local distributor"} per kg today) sits on the Maharashtra network — same state tax structure as Mumbai, with distribution costs that reflect Pune's position on the pipeline grid. Kolkata's rate ({kolkataCng ?? "set by the local distributor"} per kg) is set through West Bengal's licensed distributors; the state's VAT and cess structure that makes its petrol expensive also applies to CNG, which keeps Kolkata's per-kg rate toward the higher end of the eastern grid. Hyderabad ({hyderabadCng ?? "set by the local distributor"} per kg today) operates in Telangana's high-tax environment — the same 35%+ VAT regime behind India's most expensive petrol — and while CNG's percentage-based excise and different gas-cost base mean the gap doesn't mirror petrol exactly, the state's tax posture does push Hyderabad's CNG above many peers. <a href="/cng-price-in-hyderabad/" class="text-primary hover:underline font-semibold">Hyderabad CNG page →</a> · <a href="/cng-price-in-kolkata/" class="text-primary hover:underline font-semibold">Kolkata CNG page →</a> · <a href="/cng-price-in-pune/" class="text-primary hover:underline font-semibold">Pune CNG page →</a>
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in Ahmedabad, Jaipur, Chennai & Indore</h3>
+            <p class="text-body mb-6">
+              Ahmedabad ({ahmedabadCng ?? "set by Gujarat Gas"}) benefits from Gujarat's position as India's gas heartland — Gujarat Gas is one of the largest CGD networks in the country, and the state's proximity to pipeline infrastructure and historically moderate tax posture keep the per-kg rate competitive. Jaipur's CNG ({jaipurCng ?? "set by the local distributor"} per kg today) is served through Rajasthan's expanding network; the state's high petrol VAT doesn't map one-to-one onto CNG, but any state levies that apply do show up in the final rate. Chennai ({chennaiCng ?? "set by the local distributor"} per kg) has a smaller CNG footprint than Delhi or Mumbai — Tamil Nadu's CNG network is still developing relative to its petrol and diesel demand — and the state's flat-plus-percentage tax structure shapes whatever rate local distributors post. Indore ({indoreCng ?? "set by the local distributor"} per kg) sits in Madhya Pradesh's Central India grid, where CNG coverage is growing but still thinner than the western metros. <a href="/cng-price-in-jaipur/" class="text-primary hover:underline font-semibold">Jaipur →</a> · <a href="/cng-price-in-ahmedabad/" class="text-primary hover:underline font-semibold">Ahmedabad →</a> · <a href="/cng-price-in-chennai/" class="text-primary hover:underline font-semibold">Chennai →</a> · <a href="/cng-price-in-indore/" class="text-primary hover:underline font-semibold">Indore →</a>
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in Chandigarh, Lucknow, Ghaziabad & Noida</h3>
+            <p class="text-body mb-6">
+              Chandigarh's CNG ({chandigarhCng ?? "set by the local distributor"} per kg today) benefits from the Tricity's relatively organised CGD coverage and the UT's moderate tax environment — the same low-slab advantage that makes Chandigarh's diesel among India's cheapest applies in relative terms to CNG too. Lucknow ({lucknowCng ?? "set by the local distributor"} per kg) and the wider UP network — including Ghaziabad ({ghaziabadCng ?? "on the IGL network"}) and Noida ({noidaCng ?? "on the IGL network"}) — are served largely through IGL's expanding UP footprint and local distributors. UP's hybrid tax structure (19.36% or a floor, whichever is higher) applies to CNG where VAT is charged, landing Lucknow's rate in a moderate band relative to high-tax states. Ghaziabad and Noida, as part of the NCR, track Delhi's IGL pricing closely. <a href="/cng-price-in-lucknow/" class="text-primary hover:underline font-semibold">Lucknow →</a> · <a href="/cng-price-in-chandigarh/" class="text-primary hover:underline font-semibold">Chandigarh →</a>
+            </p>
+
+            <h2 class="text-3xl font-bold text-ink mb-6">CNG Price in Haryana, Punjab, UP & Kerala</h2>
+            <p class="text-body mb-6">
+              Beyond the metros, state-level CNG economics are shaped by network coverage and each state's tax posture. These are the states people search about most — and where the <strong>CNG price</strong> lands where it does.
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in Haryana — IGL Extension, Delhi-Adjacent Rates</h3>
+            <p class="text-body mb-6">
+              Haryana's CNG network is largely an extension of Delhi's IGL grid into Gurugram, Faridabad and Panipat, which means the <strong>CNG price in Haryana</strong> for those cities typically tracks Delhi's within a narrow band — the same distributor, the same gas sourcing, the same compression economics, with only the state's tax layer creating any gap. Haryana's VAT structure (18.2% plus additional tax on petrol; CNG-specific rates differ) applies where relevant, but the network efficiency of sharing IGL's infrastructure keeps per-kg rates from straying far from the capital. Outside the NCR belt, CNG availability in Haryana thins out — Hisar, Karnal and Rohtak have coverage in varying degrees as the network expands. <a href="/cng-price-in-haryana/" class="text-primary hover:underline font-semibold">Haryana CNG price page →</a>
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in Punjab — Tricity Belt, Narrower Coverage</h3>
+            <p class="text-body mb-6">
+              The <strong>CNG price in Punjab</strong> is most relevant around the Chandigarh–Mohali–Panchkula belt, where CGD coverage is most mature. Punjab's tax structure — 16.58% plus additional levies on petrol — has a CNG-specific counterpart wherever VAT applies, and the state's position on the gas pipeline network keeps supply costs reasonable relative to hill states to the north. Beyond the Tricity and Ludhiana–Jalandhar corridor, CNG availability across Punjab is still patchy compared to Delhi NCR or Maharashtra, so the state average matters less here than the specific city rate. <a href="/cng-price-in-punjab/" class="text-primary hover:underline font-semibold">Punjab CNG price page →</a>
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in UP — Lucknow, Kanpur, Agra & the NCR Fringe</h3>
+            <p class="text-body mb-6">
+              Uttar Pradesh has one of India's expanding CNG footprints — IGL's network runs deep into the state, covering <strong>CNG price in Lucknow</strong> ({lucknowCng ?? "tracked here"}), Kanpur, Agra, Varanasi, and the NCR fringe cities of Ghaziabad and Noida. UP's tax structure (19.36% or ₹14.85/L floor on petrol, with CNG-specific VAT where charged) keeps rates in a moderate band. The practical map for UP drivers: NCR cities track Delhi's IGL pricing; Lucknow and Kanpur have their own distributor economics based on gas sourcing distance; Agra benefits from Mathura-refinery-adjacent infrastructure. Coverage is expanding west to east, but eastern UP districts still have thinner access than the Lucknow–Kanpur–Agra triangle. <a href="/cng-price-in-uttar-pradesh/" class="text-primary hover:underline font-semibold">UP CNG price page →</a>
+            </p>
+
+            <h3 class="text-2xl font-bold text-ink mb-4">CNG Price in Kerala — Limited Network, High-Tax Environment</h3>
+            <p class="text-body mb-6">
+              The <strong>CNG price in Kerala</strong> is a different story from North and West India — not because the pricing formula differs, but because the network itself is still limited. Kerala's CNG availability is concentrated in pilot areas around Kochi and Thiruvananthapuram, with the state's broader CGD build-out still in progress. Where CNG is sold, Kerala's tax environment applies — the same stacked VAT-and-cess structure that puts the state's petrol among India's most expensive — which means per-kg rates in Kerala don't get the low-tax tailwind that CNG enjoys in, say, Gujarat or Chandigarh. For most Kerala drivers, the CNG conversion decision currently hinges more on station availability than on per-kg price. <a href="/cng-price-in-kerala/" class="text-primary hover:underline font-semibold">Kerala CNG price page →</a>
+            </p>
+
+            <h2 class="text-3xl font-bold text-ink mb-6">CNG vs Petrol — The Per-Kg Savings Math</h2>
+            <p class="text-body mb-6">
+              The reason most people care about the <strong>CNG price per kg</strong> in the first place is the cost-per-kilometre gap against petrol. CNG typically delivers a noticeably lower running cost per km for two reasons: the per-kg price is usually well below the per-litre petrol price in the same city, and CNG engines often run more kilometres per unit of fuel energy in city driving. The exact gap depends on your vehicle's mileage on both fuels, the local price spread, and how you drive — which is why a rough rule of thumb ("CNG is half the cost") is less useful than running the actual numbers for your car.
+            </p>
+            <p class="text-body mb-6">
+              If you're weighing a conversion or a new CNG vehicle, take today's rate from your city's page above, multiply by your expected CNG mileage, and compare it against your current petrol cost using our <a href="/calculator" class="text-primary hover:underline font-semibold">fuel cost calculator</a>. The <a href="/compare" class="text-primary hover:underline font-semibold">compare tool</a> also lines up petrol, diesel, CNG and autogas side by side for any tracked city, so you can see the spread without doing the arithmetic yourself. The general pattern across India's major networks: CNG wins clearly on running cost where station density makes refuelling convenient; the calculus gets tighter in cities where you'll be routing around for stations.
+            </p>
+
+            <h2 class="text-3xl font-bold text-ink mb-6">Popular CNG Price Searches</h2>
+            <div class="bg-canvas-soft border border-hairline rounded-xl p-6 mb-10">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-mute mb-4">Jump to Your City or State</h3>
+              <div class="flex flex-wrap gap-x-4 gap-y-2">
+                <a href="/cng-price-in-delhi/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Delhi</a>
+                <a href="/cng-price-in-noida/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Noida</a>
+                <a href="/cng-price-in-ghaziabad/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Ghaziabad</a>
+                <a href="/cng-price-in-mumbai/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Mumbai</a>
+                <a href="/cng-price-in-bangalore/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Bangalore</a>
+                <a href="/cng-price-in-hyderabad/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Hyderabad</a>
+                <a href="/cng-price-in-pune/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Pune</a>
+                <a href="/cng-price-in-kolkata/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Kolkata</a>
+                <a href="/cng-price-in-ahmedabad/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Ahmedabad</a>
+                <a href="/cng-price-in-jaipur/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Jaipur</a>
+                <a href="/cng-price-in-lucknow/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Lucknow</a>
+                <a href="/cng-price-in-chennai/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Chennai</a>
+                <a href="/cng-price-in-indore/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Indore</a>
+                <a href="/cng-price-in-chandigarh/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Chandigarh</a>
+                <a href="/cng-price-in-haryana/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Haryana</a>
+                <a href="/cng-price-in-punjab/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Punjab</a>
+                <a href="/cng-price-in-uttar-pradesh/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in UP</a>
+                <a href="/cng-price-in-kerala/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in Kerala</a>
+                <a href="/cng-price-in-india/" class="text-sm font-medium text-body hover:text-primary transition-colors">CNG Price in India</a>
+              </div>
+            </div>
+
+            <p class="text-body mb-6">
+              CNG infrastructure keeps expanding into new cities every year, and the Administered Price Mechanism for domestic gas — the base cost layer under most of these rates — gets revised periodically. Whether you're checking the 1 kg CNG price in Delhi before a fill-up, comparing Lucknow against Jaipur for a road trip, or simply tracking today's rate in your own city, the tables and city pages on this site are built to give you the current number quickly, with enough context to understand why it landed where it did.
+            </p>
+          </article>
+        </div>
       </section>
 
       {/* State ranking */}
