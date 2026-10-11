@@ -28,6 +28,21 @@ const { data: majorCitiesData } = await supabase
   .in('city_name', majorCityNames)
   .eq('date', dataDate);
 
+// Keyword-target cities for the live "today's petrol price" table.
+// One combined query with the major-cities fetch above would couple the
+// grids; this stays separate so the table keeps its own display order.
+const keywordCityNames = ["Delhi", "Mumbai", "Bengaluru", "Hyderabad", "Pune", "Kolkata", "Jaipur", "Lucknow", "Patna"];
+const { data: keywordCitiesData } = await supabase
+  .from('prices')
+  .select('*, cities!inner(city_slug, state_slug)')
+  .in('city_name', keywordCityNames)
+  .eq('date', dataDate);
+
+const keywordCityOrder = ["Delhi", "Mumbai", "Bengaluru", "Hyderabad", "Pune", "Kolkata", "Jaipur", "Lucknow", "Patna"];
+const keywordCities = keywordCityOrder
+  .map((name) => keywordCitiesData?.find((c) => c.city_name === name))
+  .filter((c): c is NonNullable<typeof c> => !!c);
+
 // Fetch top movers with slugs
 const { data: topMoversUp } = await supabase
   .from('prices')
@@ -78,8 +93,8 @@ const lastUpdatedTime = mumbaiPrice ? new Date(mumbaiPrice.scraped_at).toLocaleT
   timeZone: 'Asia/Kolkata'
 }) : "6:30 AM";
 
-const title = "Fuel Prices India — Today's Fuel Prices in Delhi, Mumbai, Bangalore";
-const description = `Track fuel prices today in India. Get real-time updates for fuel prices in delhi, mumbai, bangalore, hyderabad, pune and ${cityCount || 505} cities. Daily fuel price tracking and history.`;
+const title = "Petrol Price in India Today — Live Rates & Hike Tracker";
+const description = `Check today's petrol price in India across ${cityCount || 505} cities. Live rates for Delhi, Mumbai, Bangalore, Hyderabad, Pune, Kolkata & more. Track hikes, history & trends.`;
 
 // Render today's price with a graceful fallback if data hasn't synced yet.
 const priceText = (p?: { petrol_price?: number | null } | null) =>
@@ -87,12 +102,71 @@ const priceText = (p?: { petrol_price?: number | null } | null) =>
 
 const delhiPriceText = priceText(delhiPrice);
 const bangalorePriceText = priceText(bangalorePrice);
+const mumbaiPriceText = priceText(mumbaiPrice);
+
+const findCity = (name: string) => majorCitiesData?.find((c) => c.city_name === name)
+  ?? keywordCitiesData?.find((c) => c.city_name === name);
+
+const hyderabadPriceText = priceText(findCity("Hyderabad"));
+const punePriceText = priceText(findCity("Pune"));
+const kolkataPriceText = priceText(findCity("Kolkata"));
+const jaipurPriceText = priceText(findCity("Jaipur"));
+const lucknowPriceText = priceText(findCity("Lucknow"));
+const patnaPriceText = priceText(findCity("Patna"));
 
 // Only show the movers section when there is at least one mover to show.
 // Fuel prices are often frozen for weeks, so both lists are regularly empty.
 const hasTopMovers = (topMoversUp?.length || 0) > 0 || (topMoversDown?.length || 0) > 0;
 
 const faqEntity = [
+  {
+    "@type": "Question",
+    "name": "What is the petrol price today in India?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": `Petrol prices in India are revised daily at 6:00 AM IST and vary by city and state. Today's rates typically range between ₹95 and ₹110 per litre across major metros, with the exact price depending on your state's VAT. Check the live table above for today's petrol price in Delhi, Mumbai, Bangalore and other cities.`
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in Delhi today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": delhiPriceText
+        ? `Today's petrol price in Delhi is ${delhiPriceText} per litre. Delhi has the cheapest petrol of any major Indian metro because of its comparatively low 19.40% state VAT. Prices are updated every morning at 6:00 AM IST.`
+        : "Delhi's petrol price is updated every morning at 6:00 AM IST under the dynamic fuel pricing mechanism. Check the live table above for today's rate."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in Mumbai today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": mumbaiPriceText
+        ? `Today's petrol price in Mumbai is ${mumbaiPriceText} per litre. Mumbai usually has the highest petrol price of any major Indian metro because Maharashtra charges 25% VAT plus a ₹5.12 per litre additional tax in the Mumbai–Thane–Navi Mumbai belt.`
+        : "Mumbai's petrol price is updated daily at 6:00 AM IST. Maharashtra's 25% VAT plus additional levies make it one of India's most expensive cities for petrol."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in Bangalore today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": bangalorePriceText
+        ? `Today's petrol price in Bangalore is ${bangalorePriceText} per litre. Karnataka's 29.84% sales tax — raised in mid-2024 — moved Bangalore close to Mumbai's levels, roughly ₹7–9 above Delhi.`
+        : "Bangalore's petrol price is updated daily at 6:00 AM IST. Karnataka's 29.84% sales tax keeps the city among India's pricier metros."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in Hyderabad today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": hyderabadPriceText
+        ? `Today's petrol price in Hyderabad is ${hyderabadPriceText} per litre. Telangana charges India's highest petrol VAT at 35.20%, which is why Hyderabad routinely tops southern price charts.`
+        : "Hyderabad's petrol price is updated daily. Telangana's 35.20% VAT — the highest in India — keeps Hyderabad among the country's most expensive cities for petrol."
+    }
+  },
   {
     "@type": "Question",
     "name": "Why does the petrol price change every day in India?",
@@ -103,18 +177,10 @@ const faqEntity = [
   },
   {
     "@type": "Question",
-    "name": "Is petrol price going up in India?",
+    "name": "Why does the petrol price hike or fall sometimes?",
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": "Petrol prices in India fluctuate daily based on global crude oil benchmarks and the strength of the Rupee. Recently, trends have shown volatility due to geopolitical factors and global supply chain shifts."
-    }
-  },
-  {
-    "@type": "Question",
-    "name": "Will petrol price increase in the coming days?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Future petrol price increases depend on OPEC production cuts, international demand, and domestic taxation policies. It is recommended to track the daily 6:00 AM updates for the most accurate forecast."
+      "text": "A petrol price hike usually comes from one of three places: a rally in international crude oil (Brent), a weakening rupee against the dollar (crude is priced in USD), or a state government raising VAT or cess. Most daily moves are a few paise driven by crude and currency; larger jumps are almost always tax decisions by a state. Track the Daily Top Movers section on this page to see where hikes and cuts landed today."
     }
   },
   {
@@ -122,45 +188,61 @@ const faqEntity = [
     "name": "Why is petrol price high in India?",
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": "The high cost of petrol in India is primarily due to heavy taxation, including Central Excise Duty and State Value Added Tax (VAT), which can make up nearly 50% of the final retail price."
-    }
-  },
-  // City-specific answers are only published when today's price actually
-  // exists — never emit "not yet updated" placeholders into FAQ schema.
-  ...(delhiPriceText ? [
-    {
-      "@type": "Question",
-      "name": "What is the current petrol price in Delhi?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `As of today, the petrol price in Delhi is ${delhiPriceText} per litre.`
-      }
-    },
-  ] : []),
-  ...(bangalorePriceText ? [
-    {
-      "@type": "Question",
-      "name": "What is the petrol price in Bangalore today?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `Today's petrol price in Bangalore is ${bangalorePriceText} per litre.`
-      }
-    },
-  ] : []),
-  {
-    "@type": "Question",
-    "name": "What is the rate of 1 litre of petrol in India?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": `The rate of 1 litre of petrol varies by city, typically ranging between ₹95 to ₹110 across major Indian metros depending on local VAT rates.`
+      "text": "The high cost of petrol in India is primarily due to heavy taxation, including Central Excise Duty and State Value Added Tax (VAT), which can make up nearly 50% of the final retail price. Petrol is outside the GST, so each state sets its own VAT — ranging from about 19.40% in Delhi to 35.20% in Telangana."
     }
   },
   {
     "@type": "Question",
-    "name": "What's the price of petrol in India now?",
+    "name": "What is the petrol price in Rajasthan and Jaipur?",
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": `The current price of petrol in India is determined by Oil Marketing Companies and varies by location. Major cities like Mumbai and Hyderabad often see the highest rates due to state taxes.`
+      "text": jaipurPriceText
+        ? `Today's petrol price in Jaipur is ${jaipurPriceText} per litre. Rajasthan taxes petrol at 29.04% VAT plus a ₹1,500 per kilolitre road cess — nearly ten percentage points above Delhi — which is why the petrol price in Rajasthan is among the highest in North India.`
+        : "Rajasthan charges 29.04% VAT on petrol plus a road cess, keeping the petrol price in Jaipur and other Rajasthan cities well above Delhi's levels."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in Kerala?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Kerala taxes petrol at 30.08% VAT plus ₹1/L and multiple cesses (social security, additional), stacking flat extras before VAT even applies. That makes the petrol price in Kerala — Kochi, Kozhikode, Thiruvananthapuram — roughly ₹10 or more per litre above Delhi, among the highest in India."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in UP and Lucknow today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": lucknowPriceText
+        ? `Today's petrol price in Lucknow is ${lucknowPriceText} per litre. Uttar Pradesh taxes petrol at 19.36% or ₹14.85 per litre, whichever is higher — a hybrid structure that lands close to Delhi. The petrol price in UP cities like Lucknow, Kanpur and Varanasi therefore tracks the capital within ₹1–2.`
+        : "Uttar Pradesh taxes petrol at 19.36% or ₹14.85/L, whichever is higher. The petrol price in Lucknow and other UP cities usually tracks Delhi within ₹1–2 per litre, thanks to the Mathura refinery feeding the state."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in Patna today?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": patnaPriceText
+        ? `Today's petrol price in Patna is ${patnaPriceText} per litre. Bihar charges 23.58% or ₹16.65 per litre on petrol plus a 30% surcharge on VAT — few states stack a surcharge on top of VAT — which keeps the petrol price in Patna well above Lucknow and Delhi despite the Barauni refinery sitting inside the state.`
+        : "Bihar charges 23.58% or ₹16.65/L on petrol plus a 30% surcharge on VAT, keeping the petrol price in Patna above Lucknow and Delhi despite the Barauni refinery being inside the state."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in Haryana?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Haryana taxes petrol at 18.20% or ₹14.50 per litre, plus a 5% additional tax. The Panipat refinery sits inside the state, but the floor and additional tax keep the petrol price in Haryana — Gurugram, Faridabad, Karnal — about ₹1–3 above Delhi."
+    }
+  },
+  {
+    "@type": "Question",
+    "name": "What is the petrol price in Odisha?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Odisha taxes petrol at a flat 28% VAT (diesel 24%) despite hosting the Paradip refinery, which erases the freight advantage. The petrol price in Odisha — Bhubaneswar, Cuttack, Rourkela — therefore tracks closer to Kolkata's high-tax levels than to cheaper neighbours."
     }
   }
 ];
@@ -219,11 +301,11 @@ const homepageSchema = {
         
         <h1 class="text-5xl sm:text-7xl font-bold tracking-tight text-ink mb-6 max-w-4xl mx-auto">
           Fuel Prices in India. <br class="hidden sm:block" />
-          <span class="text-mute">Tracked today.</span>
+          <span class="text-mute">Today's live rates.</span>
         </h1>
 
         <p class="text-lg sm:text-xl text-body max-w-2xl mx-auto mb-12 leading-relaxed">
-           Get real-time <strong>fuel prices</strong> for {cityCount || 505} cities across India. Minimal, fast, and data-driven insights for <strong>fuel prices today</strong>.
+          Today's <strong>petrol price</strong> for {cityCount || 505} cities across India — Delhi, Mumbai, Bangalore, Hyderabad, Pune, Kolkata and every district in between. Live <strong>fuel prices</strong>, 30-day history, and tools to compare.
         </p>
         
         <div class="mb-16">
@@ -231,7 +313,7 @@ const homepageSchema = {
           
           <div class="mt-8 flex flex-wrap justify-center gap-4">
             <span class="text-xs text-mute font-medium uppercase tracking-widest">Popular:</span>
-            {["Mumbai", "Delhi", "Bangalore", "Chennai"].map(city => (
+            {["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Pune", "Kolkata"].map(city => (
               <a href={`/petrol-price-in-${city.toLowerCase()}`} class="text-xs font-bold text-body hover:text-primary transition-colors">{city}</a>
             ))}
           </div>
@@ -282,98 +364,222 @@ const homepageSchema = {
     <section class="py-24 bg-canvas border-b border-hairline">
       <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <article class="prose prose-neutral max-w-none">
-          <h2 class="text-3xl font-bold text-ink mb-6">Understanding Fuel Prices in India</h2>
+          <h2 class="text-3xl font-bold text-ink mb-6">Petrol Price in India — Live Rates, Trends & City-Wise Guide</h2>
           <p class="text-body mb-6">
-            India's fuel prices are among the most closely watched numbers in the country — not because they swing wildly from one day to the next, but because they move often enough that keeping up takes genuine effort. Under the Dynamic Fuel Pricing mechanism introduced in 2017, petrol and diesel rates are revised every morning at 6:00 AM IST, tracking the latest international crude oil prices, the rupee-dollar exchange rate, and each state's tax structure. Petrol Price India exists to take the guesswork out of that daily churn. We publish live rates for Petrol, Diesel, CNG, and Autogas (automotive LPG) across {cityCount || 505} cities and districts, along with historical trends and tools for comparing one place against another. Looking up the <strong>petrol price in Delhi</strong> is a good starting point — every city page, from the big metros to small district towns, follows the same layout, so the data reads the same way no matter where you search.
+            The <strong>petrol price in India</strong> is one of the most searched numbers in the country, and for good reason: it moves every single morning. Since 2017, petrol and diesel rates have been revised daily at 6:00 AM IST under the Dynamic Fuel Pricing mechanism, tracking international crude oil prices, the rupee-dollar exchange rate, and each state's own tax structure. Petrol Price India exists to take the guesswork out of that daily churn. We publish live rates for petrol, diesel, CNG, and autogas across {cityCount || 505} cities and districts, along with 30-day history charts and tools for comparing one city against another. Whether you need today's <strong>petrol price in Delhi</strong> before leaving for work, or you're checking what the <strong>petrol price in Mumbai</strong> will cost on a weekend drive to Pune, the answer is one search away.
           </p>
           <p class="text-body mb-6">
-            There is no single "national fuel price," and that's the part that surprises most people. India actually runs a patchwork of thousands of local prices. The base cost of a litre — the landed cost of crude plus refining and distribution expenses — is broadly similar across the country. What differs from one pump to the next is the tax layer stacked on top. The central government applies a uniform excise duty, but each state sets its own Value Added Tax, and several add extra surcharges, local cess, or octroi on top. That is why the same litre of petrol can cost ₹10 or more extra in one city compared with another a few hundred kilometres away. Our <a href="/blog/how-fuel-excise-duty-and-state-vat-are-calculated/" class="text-primary hover:underline font-semibold">excise and VAT explainer</a> walks through this arithmetic step by step, from base price to the final bill at the pump.
-          </p>
-
-          <h2 class="text-3xl font-bold text-ink mb-6">Why Prices Differ Between Cities and States</h2>
-          <p class="text-body mb-6">
-            The gap between cities isn't random, and it's worth understanding before you fill up, plan a trip, or budget a fleet's fuel spend. States treat fuel VAT as a major revenue source — petrol, diesel, and their alternatives sit outside the Goods and Services Tax — so the rate each state picks is as much a policy decision as a revenue one. Take two metros as an example: the <strong>petrol price in Mumbai</strong> is among the highest in the country because Maharashtra stacks steep VAT and extra levies on top, while the <strong>petrol price in Delhi</strong> stays closer to the national floor thanks to a comparatively modest state tax. Smaller factors nudge the number in particular places too: how far a city sits from a distribution depot, local dealer margins, and municipal charges.
-          </p>
-          <p class="text-body mb-6">
-            None of this is easy to hold in your head, which is precisely why we track it. Open any city's page and you'll see today's price, yesterday's, and a running history — enough to tell whether a jump was a routine morning revision, a state budget decision, or a one-off local change. The <a href="/blog/state-wise-petrol-price-ranking-2026/" class="text-primary hover:underline font-semibold">state-wise ranking</a> places each state's average against the rest of the country, and the <a href="/compare" class="text-primary hover:underline font-semibold">compare tool</a> lines up multiple cities side by side so you can see the spread for yourself.
+            There is no single "national petrol price." India actually runs a patchwork of thousands of local prices. The base cost of a litre — landed crude plus refining and distribution — is broadly similar across the country. What differs from one pump to the next is the tax layer stacked on top: a uniform central excise duty, then each state's own Value Added Tax, and in several states extra surcharges or cess on top of that. That is why the same litre can cost ₹10 or more extra in one city compared with another a few hundred kilometres away. Our <a href="/blog/how-fuel-excise-duty-and-state-vat-are-calculated/" class="text-primary hover:underline font-semibold">excise and VAT explainer</a> walks through this arithmetic step by step, from base price to the final bill at the pump.
           </p>
 
-          <h3 class="text-2xl font-bold text-ink mb-4">The Four Fuel Types We Cover</h3>
+          <h2 class="text-3xl font-bold text-ink mb-6">How the Petrol Price in India Is Set Every Day</h2>
           <p class="text-body mb-6">
-            The site tracks four fuels, each with its own pricing logic:
+            Before June 2017, fuel prices in India changed only twice a month — on the 1st and 16th — based on the previous fortnight's average international price. Everyone knew when a hike was coming, so people rushed to fill up the night before and then avoided pumps for days after, leaving dealers with unpredictable demand. The Oil Marketing Companies — IOC, HPCL, and BPCL — replaced that with daily dynamic pricing: every morning at 6:00 AM IST, each company publishes the day's revised price for every city in the country, absorbing the previous day's crude and currency moves in one step.
+          </p>
+          <p class="text-body mb-6">
+            The price you actually pay is built from four layers stacked on top of each other. First comes the <strong class="text-ink">base price</strong> — the refiner's cost of crude, processing, and moving fuel to your city's terminal. Second, the <strong class="text-ink">central excise duty</strong>, a fixed per-litre amount set by the central government and identical nationwide. Third, <strong class="text-ink">dealer commission</strong> — the petrol pump owner's margin, roughly ₹3–4 per litre. Fourth, and most variable, <strong class="text-ink">state VAT</strong>, set individually by each state and charged on top of everything above it. Because VAT is ad valorem — a percentage of the combined base, excise, and commission — every crude rally gets amplified more in high-VAT states than in low-VAT ones.
+          </p>
+          <p class="text-body mb-6">
+            Petrol is deliberately outside the Goods and Services Tax. State VAT on petrol and diesel is a major revenue source, and bringing fuel into GST would require states to give up that revenue, so the two-layer excise-plus-VAT system remains. It is also why the <strong>petrol price hike</strong> conversation is really two conversations: one about crude and currency (small daily paise moves), and one about state tax policy (the multi-rupee gaps between cities).
+          </p>
+
+          <h2 class="text-3xl font-bold text-ink mb-6">Today's Petrol Price in Major Cities</h2>
+          <p class="text-body mb-6">
+            Below is today's <strong>petrol price</strong> for the cities people search for most — live from the latest 6:00 AM IST revision. Click any city to open its full page with a 30-day history chart, nearby-city comparison, and a fuel cost calculator.
+          </p>
+
+          {keywordCities.length > 0 && (
+            <div class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm mb-10 not-prose">
+              <div class="px-6 py-4 bg-canvas-soft-2 border-b border-hairline flex items-center justify-between">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-mute">Petrol Price Today — Major Cities</h3>
+                <span class="text-[10px] font-mono uppercase tracking-widest text-mute">₹ / Litre</span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead class="bg-canvas-soft text-[10px] font-mono uppercase tracking-widest text-mute">
+                    <tr>
+                      <th class="px-6 py-3">City</th>
+                      <th class="px-6 py-3">State</th>
+                      <th class="px-6 py-3 text-right">Petrol Price</th>
+                      <th class="px-6 py-3 text-right">vs Yesterday</th>
+                      <th class="px-6 py-3"></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-hairline">
+                    {keywordCities.map((city) => {
+                      const chg = city.price_change;
+                      return (
+                        <tr class="hover:bg-canvas-soft transition-colors group">
+                          <td class="px-6 py-4">
+                            <span class="text-sm font-semibold text-ink">{displayCityName(city.city_name)}</span>
+                          </td>
+                          <td class="px-6 py-4 text-xs text-mute">{city.state_name}</td>
+                          <td class="px-6 py-4 text-sm font-mono font-bold text-right">₹{city.petrol_price?.toFixed(2) || 'N/A'}</td>
+                          <td class="px-6 py-4 text-sm font-mono text-right">
+                            <span class={chg > 0 ? 'text-error' : chg < 0 ? 'text-success' : 'text-mute'}>
+                              {chg > 0 ? '▲' : chg < 0 ? '▼' : '—'} {Math.abs(chg || 0).toFixed(2)}
+                            </span>
+                          </td>
+                          <td class="px-6 py-4 text-right">
+                            <a href={`/petrol-price-in-${city.cities.city_slug}/`} class="inline-flex items-center gap-1 text-xs font-semibold text-mute group-hover:text-primary transition-colors">
+                              View <ArrowRight class="w-3 h-3" />
+                            </a>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div class="px-6 py-3 border-t border-hairline">
+                <p class="text-xs text-mute">Updated daily at 6:00 AM IST. City pages also show 30-day trends so you can see whether the <strong class="text-ink">petrol price today</strong> is part of a rising or falling pattern.</p>
+              </div>
+            </div>
+          )}
+
+          <h2 class="text-3xl font-bold text-ink mb-6">Petrol Price in Delhi, Mumbai, Bangalore & Other Metro Cities</h2>
+          <p class="text-body mb-6">
+            India's big metros sit at opposite ends of the fuel-price table, and almost the entire gap is tax. Here's what drives the <strong>petrol price</strong> in each major city — and what it means if you actually drive there.
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Delhi — The Cheapest Big Metro</h3>
+          <p class="text-body mb-6">
+            The <strong>petrol price in Delhi</strong> is the number every other metro is measured against. Delhi charges 19.40% VAT on petrol (16.75% plus a small air-ambience charge on diesel) — among the lowest slabs of any major consuming state — and is fed from the Panipat refinery through short pipeline runs, so freight is minimal. That combination keeps the <strong>today petrol price in Delhi</strong> roughly ₹8–10 per litre below Mumbai and ₹7–9 below Bangalore. NCR spreads are tight: Noida's UP slab and Gurugram's Haryana slab track Delhi within ₹1–2, so cross-border fuel runs aren't worth the detour. For a Rohini–Gurugram commuter, mileage discipline beats pump hunting every time. <a href="/petrol-price-in-delhi/" class="text-primary hover:underline font-semibold">Delhi petrol price page →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Mumbai — India's Most Expensive Metro</h3>
+          <p class="text-body mb-6">
+            The <strong>petrol price in Mumbai</strong> has lived at the top of India's table for years, and the reason is printed in Maharashtra's tax code. The state charges 25% VAT on petrol plus a flat ₹5.12 per litre additional tax in the Mumbai–Thane–Navi Mumbai belt — a surcharge no other metro pays. On a dealer price of roughly ₹60–65 a litre, that stack alone explains ₹7–8 of the gap with Delhi, and because VAT is ad valorem, every crude rally hits Mumbai harder than the capital. Supply from Trombay-area terminals also costs more per litre than Delhi's pipeline-fed run. <a href="/petrol-price-in-mumbai/" class="text-primary hover:underline font-semibold">Mumbai petrol price page →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Bangalore — Karnataka's 29.84% Sales Tax</h3>
+          <p class="text-body mb-6">
+            Bangalore drivers felt a step-change in mid-2024 when Karnataka raised petrol sales tax to 29.84%, moving the city from the cheaper half of southern metros to within ₹2–4 of Mumbai. Before the hike, Whitefield commuters paid meaningfully less; after it, the gap with Delhi widened to ₹7–9. Supply is not the problem — the Mangalore refinery feeds Bengaluru terminals efficiently — the price is tax almost all the way down. Hosur across the Tamil Nadu border is sometimes ₹1–3 cheaper and worth it for Electronic City commuters who cross anyway, but a dedicated fuel trip rarely pays. <a href="/petrol-price-in-bangalore/" class="text-primary hover:underline font-semibold">Bangalore petrol price page →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Hyderabad — India's Highest VAT at 35.20%</h3>
+          <p class="text-body mb-6">
+            Telangana charges 35.20% VAT on petrol and 27% on diesel — the highest rates in the country — which is why the <strong>petrol price in Hyderabad</strong> routinely tops southern charts above Bangalore and Chennai. Delhi's 19.40% is barely more than half Telangana's rate. On a ₹62 dealer price, that sixteen-point gap alone adds roughly ₹10 per litre before a single drop of freight. HITEC City commuters doing 1,500 km a month at 13 km/L burn about 115 litres, so every rupee of VAT is ₹115 a month. There is no cheap neighbouring state within practical reach, so the levers are carpooling, CNG where available, and watching the trend chart. <a href="/petrol-price-in-hyderabad/" class="text-primary hover:underline font-semibold">Hyderabad petrol price page →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Pune — Mumbai's Tax Without Mumbai's Terminals</h3>
+          <p class="text-body mb-6">
+            Pune falls under Maharashtra's rest-of-state slab — the same 25% VAT plus ₹5.12 per litre additional tax on petrol as Mumbai — but without Mumbai's Trombay-adjacent terminal advantage. Fuel typically travels from Mumbai-area installations with extra handling, so Pune usually prints a few paise to a rupee above Mumbai and ₹8–10 above Delhi. Hill-station weekend runs toward Mahabaleshwar or Lonavala won't find cheaper fuel — the same slab applies throughout Maharashtra — so tank up in the city. At 15 km/L, a 50 km daily round trip at Pune prices costs roughly ₹10,000–11,000 a month in fuel alone, which is the number to beat with shared rides. <a href="/petrol-price-in-pune/" class="text-primary hover:underline font-semibold">Pune petrol price page →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Kolkata — Sticky Prices, High Floor</h3>
+          <p class="text-body mb-6">
+            The <strong>petrol price in Kolkata</strong> surprises first-time visitors: petrol here costs closer to Mumbai than to Delhi, often ₹8–11 above the capital. West Bengal's stack — 25% or ₹13.12 per litre, whichever is higher, plus a cess — keeps the premium almost entirely tax-driven despite the Haldia refinery being practically next door. The "whichever is higher" floor matters more than it looks: when crude softens and dealer prices fall, the ₹13.12 minimum keeps Kolkata's tax take high while Delhi's pure-percentage VAT falls with the base. That is why Kolkata prices feel sticky on the way down and springy on the way up. <a href="/petrol-price-in-kolkata/" class="text-primary hover:underline font-semibold">Kolkata petrol price page →</a>
+          </p>
+
+          <h2 class="text-3xl font-bold text-ink mb-6">Petrol Price in Rajasthan, UP, Kerala, Haryana, Odisha & Bihar</h2>
+          <p class="text-body mb-6">
+            Beyond the metros, state tax policy drives equally dramatic gaps. These are the states people ask about most — and why the <strong>petrol price</strong> lands where it does in each.
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Rajasthan & Jaipur — 29.04% VAT</h3>
+          <p class="text-body mb-6">
+            The <strong>petrol price in Rajasthan</strong> is among the North's dearest: 29.04% VAT plus a ₹1,500 per kilolitre road cess — nearly ten percentage points above Delhi — while diesel sits far kinder at 17.30%. That gap keeps the <strong>petrol price in Jaipur</strong>, Jodhpur and Udaipur high with a wide petrol–diesel spread that makes diesel SUVs economically rational here long after other metros tilted toward petrol. Panipat and Mathura refineries feed the state with ordinary freight, so tax is the price. Every neighbouring slab — Gujarat, UP, Haryana — is cheaper on petrol, which is why border pumps at Abu Road and Bhiwadi do steady arbitrage trade. <a href="/petrol-price-in-jaipur/" class="text-primary hover:underline font-semibold">Jaipur petrol price →</a> · <a href="/petrol-price-in-rajasthan/" class="text-primary hover:underline font-semibold">Rajasthan state page →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in UP & Lucknow — Tracks Delhi, Thanks to Mathura</h3>
+          <p class="text-body mb-6">
+            Uttar Pradesh taxes petrol at 19.36% or ₹14.85 per litre, whichever is higher — a hybrid that lands very close to Delhi's 19.40% in practice. Add the Mathura refinery roughly in the middle of the state feeding Lucknow and Kanpur terminals, and the <strong>petrol price in Lucknow</strong> usually prints within ₹1–2 of Delhi, far below Jaipur or Patna. The floor is the detail to watch: in soft-crude months the ₹14.85 minimum binds and Lucknow stops tracking Delhi down; in firm months the percentage binds and the two cities move together. The <strong>petrol price in UP</strong> cities like Kanpur and Varanasi shares the same slab, so there is no intra-state arbitrage to play. <a href="/petrol-price-in-lucknow/" class="text-primary hover:underline font-semibold">Lucknow petrol price →</a> · <a href="/petrol-price-in-uttar-pradesh/" class="text-primary hover:underline font-semibold">UP state page →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Kerala — Kochi Refinery, Triple-Layer Cesses</h3>
+          <p class="text-body mb-6">
+            Kerala refines fuel at Kochi yet pays among India's highest prices. The state charges 30.08% VAT on petrol plus ₹1 per litre and multiple cesses — social security, additional — stacking flat extras of ₹3+ per litre before VAT even applies. That combination makes the <strong>petrol price in Kerala</strong> cities like Kochi, Kozhikode and Thiruvananthapuram ₹10 or more above Delhi, among the highest in the country. Freight runs the state's length too, so the capital prints above Kochi most days. The one relief point is Mahe, the Puducherry enclave inside Kannur district, whose pumps undercut Kerala neighbours by several rupees. <a href="/petrol-price-in-kerala/" class="text-primary hover:underline font-semibold">Kerala petrol price page →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Haryana — Panipat Refinery, Delhi Still Cheaper</h3>
+          <p class="text-body mb-6">
+            Haryana hosts the Panipat refinery, so freight into Gurugram, Faridabad and Karnal is minimal — yet the <strong>petrol price in Haryana</strong> still runs ₹1–3 above Delhi. The structure is 18.20% or ₹14.50 per litre, plus a 5% additional tax; the floor and the add-on erase the freight edge. Gurugram–Delhi commuters cross the border daily without fuel motive. Within Haryana spreads are narrow; the gradient that matters is south toward Rajasthan (29.04%, far worse) and north toward Chandigarh UT (15.24%, kinder). Jaipur-bound drivers fill in Haryana — Rewari and Narnaul pumps do brisk border trade. <a href="/petrol-price-in-haryana/" class="text-primary hover:underline font-semibold">Haryana petrol price page →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Patna & Bihar — Refinery Next Door, Surcharge on Top</h3>
+          <p class="text-body mb-6">
+            Bihar should be cheap — the Barauni refinery sits inside the state feeding Patna terminals directly — but a 30% surcharge on VAT changes the arithmetic. The structure is 23.58% or ₹16.65 per litre on petrol, plus the surcharge, which is why the <strong>petrol price in Patna</strong> routinely prints ₹4–6 above Lucknow despite the shorter supply run. Few states surcharge their own VAT, and the floor clause makes Patna prices sticky downwards: when dealer prices soften, the ₹16.65 minimum binds and the city stops tracking Delhi down. Eastbound operators fill in UP before crossing; local drivers save more by shifting Gandhi Setu crossings outside peak hours than by comparing pumps on Ashok Rajpath. <a href="/petrol-price-in-patna/" class="text-primary hover:underline font-semibold">Patna petrol price →</a>
+          </p>
+
+          <h3 class="text-2xl font-bold text-ink mb-4">Petrol Price in Odisha — Paradip Refinery, Flat 28% Anyway</h3>
+          <p class="text-body mb-6">
+            Odisha refines at Paradip and delivers via Sambalpur and Jatni terminals with short freight — then taxes petrol at a flat 28% (diesel 24%), erasing the entire refinery advantage. The <strong>petrol price in Odisha</strong> — Bhubaneswar, Cuttack, Rourkela — therefore tracks closer to Kolkata's high-tax levels than to cheaper neighbours. District spreads are modest; the Rourkela–Jharsuguda industrial belt adds small freight over the coastal plain. Chhattisgarh (24%) can undercut western districts, while Andhra Pradesh (31%) is worse to the south. Steel-and-mining diesel fleets feel the 24% diesel slab directly — among the higher diesel rates in eastern India. <a href="/petrol-price-in-odisha/" class="text-primary hover:underline font-semibold">Odisha petrol price page →</a>
+          </p>
+
+          <h2 class="text-3xl font-bold text-ink mb-6">Petrol Price Hike — Why Prices Rise and How to Track Them</h2>
+          <p class="text-body mb-6">
+            A <strong>petrol price hike</strong> in India usually comes from one of three places. The most common is a rally in international crude — Brent rising on OPEC cuts, geopolitical tension, or demand forecasts — which feeds into the base price within a day or two. The second is a weakening rupee: crude is priced in dollars, so when the rupee falls from ₹88 to ₹92 against the dollar, the same barrel costs the refiner more even if oil itself hasn't moved. The third, and the one that produces the biggest jumps, is a state government raising VAT or cess — Karnataka's mid-2024 move to 29.84% is the recent textbook example, adding ₹3–4 to Bangalore's pump price overnight.
+          </p>
+          <p class="text-body mb-6">
+            Most daily moves are a few paise, absorbed before most people notice. The multi-rupee conversations — "why is petrol so expensive in Kerala?" or "why did Jaipur jump last week?" — are almost always tax decisions, not crude ones. For tracking, three things matter: the daily 6:00 AM revision (this page's live table reflects it), the 30-day trend on each city page (to see whether a move is a spike or a trend), and the <a href="#top-movers" class="text-primary hover:underline font-semibold">Daily Top Movers</a> section on this homepage, which surfaces the biggest increases and cuts in the country each day. Our <a href="/blog/why-petrol-prices-change-at-6am-and-how-omcs-calculate-them/" class="text-primary hover:underline font-semibold">6 AM pricing explainer</a> and <a href="/blog/rupee-vs-dollar-currency-fluctuation-petrol-bill/" class="text-primary hover:underline font-semibold">rupee-dollar breakdown</a> go deeper on the first two drivers.
+          </p>
+
+          <h2 class="text-3xl font-bold text-ink mb-6">Fuel Prices Beyond Petrol — Diesel, CNG & Autogas</h2>
+          <p class="text-body mb-6">
+            While petrol is the most-watched number, the broader picture of <strong>fuel prices</strong> in India covers four products, each with its own pricing logic:
           </p>
           <ul class="list-disc pl-6 mb-6 space-y-2 text-body">
-            <li><strong>Petrol</strong> — the default fuel for most cars and motorcycles, and the most-watched price on the site.</li>
-            <li><strong>Diesel</strong> — the workhorse for trucks, buses, and tractors, and an increasingly common choice for SUVs. It carries a lower central excise duty than petrol, which is why it usually costs less per litre in the same city.</li>
-            <li><strong>CNG</strong> — compressed natural gas, sold by the kilogram rather than the litre, and typically the cheapest option where it's available. It's the fuel behind most city-run and private fleets, autorickshaws, and taxis.</li>
-            <li><strong>Autogas</strong> — automotive-grade LPG used mainly by autorickshaws and retrofitted vehicles. It's a different product from the cooking-gas cylinder, even though both are liquefied petroleum gas.</li>
+            <li><strong>Petrol</strong> — the default for most cars and motorcycles, revised daily at 6 AM, and the focus of most searches on this site.</li>
+            <li><strong>Diesel</strong> — the workhorse for trucks, buses, and tractors. It carries a lower central excise duty than petrol and lower VAT in most states, which is why it usually costs ₹10+ less per litre in the same city.</li>
+            <li><strong>CNG</strong> — compressed natural gas, sold by the kilogram rather than the litre, typically the cheapest option where available. It powers most city fleets, autorickshaws, and taxis, and is repriced less often than petrol.</li>
+            <li><strong>Autogas</strong> — automotive-grade LPG used mainly by autorickshaws and retrofitted vehicles. Different from the cooking-gas cylinder, even though both are liquefied petroleum gas.</li>
           </ul>
           <p class="text-body mb-6">
-            Petrol and diesel follow the daily 6 AM revision; CNG and Autogas are repriced less often because they're measured by weight and their supply chains differ. Each fuel has a dedicated page explaining how its own price is put together.
+            National hubs: <a href="/petrol-price-in-india/" class="text-primary hover:underline font-semibold">petrol price in India</a> · <a href="/diesel-price-in-india/" class="text-primary hover:underline font-semibold">diesel price in India</a> · <a href="/cng-price-in-india/" class="text-primary hover:underline font-semibold">CNG price in India</a> · <a href="/autogas-price-in-india/" class="text-primary hover:underline font-semibold">autogas price in India</a>.
           </p>
 
-          <h2 class="text-3xl font-bold text-ink mb-6">How to Use the Site</h2>
+          <h2 class="text-3xl font-bold text-ink mb-6">Tools to Compare Fuel Prices and Plan Trips</h2>
           <p class="text-body mb-6">
-            The tools on Petrol Price India are built around a few simple tasks:
-          </p>
-          <ul class="list-disc pl-6 mb-6 space-y-2 text-body">
-            <li><strong>City search</strong> — type any city or town into the search bar to pull up its current price and recent history — the petrol price in Chennai, Kochi, Lucknow, or any of the other {cityCount || 505} locations we track.</li>
-            <li><strong>Compare</strong> — stack two or more cities against each other to see exactly how much the state tax layer costs you.</li>
-            <li><a href="/calculator" class="text-primary hover:underline font-semibold"><strong>Fuel calculator</strong></a> — enter your vehicle's mileage and trip distance to estimate your spend at today's rates, which is especially handy before a long road trip.</li>
-            <li><strong>Historical trends</strong> — every city page includes a chart of past prices, useful for spotting a pattern before you time a fill-up or plan a long haul.</li>
-          </ul>
-          <p class="text-body mb-6">
-            The value of all this is context, not just a number. A single price tells you what you'll pay today; the trend tells you whether prices are drifting up or down, and a comparison tells you whether you're paying more than you would a short drive away. If you're about to drive from Mumbai to Pune, or budgeting monthly fuel costs for a delivery fleet running across Bangalore and Hyderabad, having today's price, yesterday's price, and a six-week history in one place makes the decision straightforward.
+            A single price tells you what you'll pay today; the tools on this site give you the context around it. The <a href="/compare" class="text-primary hover:underline font-semibold">compare tool</a> lines up two to four cities side by side so you can see exactly how much the state tax layer costs you on a corridor like Mumbai–Pune or Delhi–Jaipur. The <a href="/calculator" class="text-primary hover:underline font-semibold">fuel cost calculator</a> takes your vehicle's mileage and trip distance and estimates spend at today's rates — especially handy before a long haul or when budgeting monthly fleet costs across Bangalore and Hyderabad. Every city and state page includes a 30-day history chart, useful for spotting whether you're looking at a one-off spike or a genuine trend before you time a fill-up.
           </p>
 
-          <h2 class="text-3xl font-bold text-ink mb-6">Fuel Prices Going Forward</h2>
-          <p class="text-body mb-12">
-            Fuel prices will remain a daily economic indicator for years, even as ethanol blending expands and electric vehicles gain ground. Petrol and diesel still power the overwhelming majority of India's vehicles, and CNG and Autogas infrastructure keeps spreading into new cities. What changes is how easy it is to stay informed. Whether you're checking the petrol price in Hyderabad or in a smaller town, Petrol Price India is designed to give you accurate, up-to-date figures in a format that's quick to read and easy to act on.
+          <div class="bg-canvas-soft border border-hairline rounded-xl p-6 mb-10 not-prose">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-mute mb-4">Popular Petrol Price Searches</h3>
+            <div class="flex flex-wrap gap-x-4 gap-y-2">
+              <a href="/petrol-price-in-delhi/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Delhi</a>
+              <a href="/petrol-price-in-mumbai/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Mumbai</a>
+              <a href="/petrol-price-in-bangalore/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Bangalore</a>
+              <a href="/petrol-price-in-hyderabad/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Hyderabad</a>
+              <a href="/petrol-price-in-pune/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Pune</a>
+              <a href="/petrol-price-in-kolkata/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Kolkata</a>
+              <a href="/petrol-price-in-jaipur/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Jaipur</a>
+              <a href="/petrol-price-in-lucknow/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Lucknow</a>
+              <a href="/petrol-price-in-patna/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Patna</a>
+              <a href="/petrol-price-in-rajasthan/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Rajasthan</a>
+              <a href="/petrol-price-in-uttar-pradesh/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in UP</a>
+              <a href="/petrol-price-in-kerala/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Kerala</a>
+              <a href="/petrol-price-in-haryana/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Haryana</a>
+              <a href="/petrol-price-in-odisha/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in Odisha</a>
+              <a href="/petrol-price-in-india/" class="text-sm font-medium text-body hover:text-primary transition-colors">Petrol Price in India</a>
+            </div>
+          </div>
+
+          <p class="text-body">
+            Fuel prices will remain a daily economic indicator for years, even as ethanol blending expands and electric vehicles gain ground. Petrol and diesel still power the overwhelming majority of India's vehicles, and CNG and autogas infrastructure keeps spreading into new cities. Whether you're checking the petrol price in Hyderabad before a fill-up, comparing Rajasthan against Haryana for a road trip, or simply tracking today's rate in your own city, Petrol Price India is built to give you accurate, up-to-date figures in a format that's quick to read and easy to act on.
           </p>
         </article>
       </div>
     </section>
 
-    {/* FAQ Section */}
+    {/* FAQ Section — rendered from the same faqEntity as the FAQPage schema */}
     <section class="py-24 bg-canvas border-b border-hairline">
       <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <h2 class="text-3xl font-bold text-ink mb-12 text-center">Frequently Asked Questions</h2>
         <div class="space-y-6">
-          <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
-            <h3 class="text-lg font-bold text-ink mb-2">Why does the petrol price change every day in India?</h3>
-            <p class="text-body">In India, fuel prices are revised daily at 6:00 AM IST under the "Dynamic Fuel Pricing" mechanism. This system ensures that fluctuations in international crude oil prices and the USD-INR exchange rate are passed on to consumers immediately.</p>
-          </div>
-          <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
-            <h3 class="text-lg font-bold text-ink mb-2">Is petrol price going up in India?</h3>
-            <p class="text-body">Petrol prices in India fluctuate daily based on global crude oil benchmarks and the strength of the Rupee. Recently, trends have shown volatility due to geopolitical factors and global supply chain shifts.</p>
-          </div>
-          <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
-            <h3 class="text-lg font-bold text-ink mb-2">Why is petrol price high in India?</h3>
-            <p class="text-body">The high cost of petrol in India is primarily due to heavy taxation, including Central Excise Duty and State Value Added Tax (VAT), which can make up nearly 50% of the final retail price.</p>
-          </div>
-          {delhiPriceText && (
+          {faqEntity.map((q) => (
             <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
-              <h3 class="text-lg font-bold text-ink mb-2">What is the current petrol price in Delhi?</h3>
-              <p class="text-body">As of today, the petrol price in Delhi is <strong>{delhiPriceText}</strong> per litre. Prices are updated every morning at 6:00 AM.</p>
+              <h3 class="text-lg font-bold text-ink mb-2">{q.name}</h3>
+              <p class="text-body">{q.acceptedAnswer.text}</p>
             </div>
-          )}
-          {bangalorePriceText && (
-            <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
-              <h3 class="text-lg font-bold text-ink mb-2">What is the petrol price in Bangalore today?</h3>
-              <p class="text-body">Today's petrol price in Bangalore is <strong>{bangalorePriceText}</strong> per litre. You can track daily historical changes on our Bangalore-specific price page.</p>
-            </div>
-          )}
-          <div class="bg-canvas-soft border border-hairline rounded-xl p-6">
-            <h3 class="text-lg font-bold text-ink mb-2">What's the price of petrol in India now?</h3>
-            <p class="text-body">The current price of petrol in India varies by location, typically ranging between ₹95 to ₹110. Major cities like Mumbai and Hyderabad often see higher rates due to state-level surcharges.</p>
-          </div>
+          ))}
         </div>
       </div>
     </section>
 
     {/* Top Movers — hidden entirely when prices are frozen and both lists are empty */}
     {hasTopMovers && (
-    <section class="py-24 bg-canvas-soft border-b border-hairline">
+    <section id="top-movers" class="py-24 bg-canvas-soft border-b border-hairline scroll-mt-20">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col md:flex-row justify-between items-baseline gap-4 mb-12">
           <div>
@@ -451,7 +657,7 @@ const homepageSchema = {
         <div class="flex justify-between items-end mb-12">
           <div>
             <h2 class="text-3xl font-bold tracking-tight text-ink mb-2">Major Cities</h2>
-            <p class="text-body">Fuel prices in major Indian metropolitans.</p>
+            <p class="text-body">Today's petrol price and fuel prices in major Indian metros.</p>
           </div>
           <a href="/all-cities" class="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
             View all cities <ArrowRight class="w-4 h-4" />

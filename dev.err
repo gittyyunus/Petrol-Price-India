@@ -1,0 +1,7 @@
+[31m[1m21:16:22[22m [ERROR] [vite][39m [31mInternal server error: The file does not exist at "C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/.vite/deps_ssr/astro_content_runtime.js?v=22b74647" which is in the optimize deps directory. The dependency might be incompatible with the dep optimizer. Try adding it to `optimizeDeps.exclude`.[39m
+      at runInRunnerObject (workers/runner-worker/index.js:107:3)
+      at _NonRunnablePipeline.getComponentByRoute (C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/.vite/deps_ssr/astro_app_entrypoint_dev.js?v=22b74647:296:20)
+      at matchRoute (C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/.vite/deps_ssr/astro_app_entrypoint_dev.js?v=22b74647:374:14)
+      at DevApp.devMatch (C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/.vite/deps_ssr/astro_app_entrypoint_dev.js?v=22b74647:498:26)
+      at Object.handle [as fetch] (C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/.vite/deps_ssr/@astrojs_cloudflare_entrypoints_server.js?v=22b74647:287:20)
+      at maybeCaptureError (workers/runner-worker/index.js:51:10)

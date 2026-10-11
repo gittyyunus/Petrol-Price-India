@@ -1,24 +1,259 @@
 
 > petrolpriceindia.com@0.0.1 dev
-> astro dev --host 127.0.0.1 --port 4321
+> astro dev
 
-Generated 2180 dynamic sitemap URLs (512 cities, 4 fuel types)
+Generated 1794 dynamic sitemap URLs (512 cities; cng: 505 cities/32 states, autogas: 151 cities/23 states, lastmod: 2026-09-06)
 Generated 12 blog sitemap URLs
-[2m14:58:20[22m [34m[@astrojs/cloudflare][39m Enabling image processing with Cloudflare Images for production with the "IMAGES" Images binding.
-[2m14:58:20[22m [34m[@astrojs/cloudflare][39m Enabling sessions with Cloudflare KV with the "SESSION" KV binding.
+[2m20:48:55[22m [34m[@astrojs/cloudflare][39m Enabling image processing with Cloudflare Images for production with the "IMAGES" Images binding.
+[2m20:48:55[22m [34m[@astrojs/cloudflare][39m Enabling sessions with Cloudflare KV with the "SESSION" KV binding.
 Using secrets defined in .env
 [vite] connected.
-[2m14:58:26[22m [34m[types][39m Generated [2m8ms[22m
-[2m14:58:28[22m [34m[content][39m Syncing content
-[2m14:58:28[22m [34m[content][39m Synced content
-[2m14:58:28[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
-[2m14:58:28[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
-[42m[1m astro [22m[49m [32mv6.4.6[39m [2mready in[22m 18807 [2mms[22m
-[2m┃[22m Local    [36mhttp://127.0.0.1:4321/[39m
-[2m14:58:34[22m [32mwatching for file changes...[39m
-[2m14:58:38[22m [34m[vite][39m [vite] program reload
-[2m14:58:42[22m [34m[vite][39m [vite] program reload
-[2m14:58:45[22m [34m[vite][39m [vite] program reload
-[2m14:58:46[22m [34m[watch][39m post1.html
-[2m14:58:46[22m [34m[watch][39m post1.html
-[2m15:01:12[22m [34m[vite][39m [vite] program reload
+[2m20:49:30[22m [34m[types][39m Generated [2m8ms[22m
+[2m20:49:31[22m [34m[content][39m Syncing content
+[2m20:49:31[22m [34m[content][39m Synced content
+[2m20:49:37[22m [34m[vite][39m Port 4321 is in use, trying another one...
+[2m20:49:37[22m [34m[vite][39m Port 4322 is in use, trying another one...
+[42m[1m astro [22m[49m [32mv6.4.6[39m [2mready in[22m 48946 [2mms[22m
+[2m┃[22m Local    [36mhttp://localhost:4323/[39m
+[2m┃[22m Network  [2muse --host to expose[22m
+[2m20:49:37[22m [32mwatching for file changes...[39m
+[2m20:50:14[22m [34m[vite][39m [32m✨ new dependencies optimized: [33m@lucide/astro[32m[39m
+[2m20:50:14[22m [34m[vite][39m [32m✨ optimized dependencies changed. reloading[39m
+[2m20:50:14[22m [34m[vite][39m [vite] program reload
+[2m20:50:36[22m [34m[vite][39m [32m✨ new dependencies optimized: [33mastro/env/runtime[32m[39m
+[2m20:50:36[22m [34m[vite][39m [32m✨ optimized dependencies changed. reloading[39m
+[2m20:50:36[22m [34m[vite][39m [vite] program reload
+[2m20:50:43[22m [34m[vite][39m [vite] program reload
+[2m20:50:45[22m [34m[vite][39m [vite] program reload
+[2m20:50:49[22m [34m[vite][39m [vite] program reload
+[2m20:50:52[22m [34m[vite][39m [vite] program reload
+[2m20:50:54[22m [34m[vite][39m [vite] program reload
+[2m20:50:58[22m [34m[vite][39m [vite] program reload
+[2m20:51:02[22m [34m[vite][39m [vite] program reload
+[2m20:51:09[22m [34m[vite][39m [vite] program reload
+[2m20:51:16[22m [34m[vite][39m [vite] program reload
+[2m20:51:17[22m [34m[vite][39m [vite] program reload
+[2m20:51:18[22m [34m[vite][39m [vite] program reload
+[2m20:51:19[22m [34m[vite][39m [vite] program reload
+[2m20:51:25[22m [34m[vite][39m [vite] program reload
+[2m20:51:29[22m [34m[vite][39m [vite] program reload
+[2m20:51:31[22m [34m[vite][39m [vite] program reload
+[2m20:51:33[22m [34m[vite][39m [vite] program reload
+[2m20:51:36[22m [34m[vite][39m [vite] program reload
+[2m20:51:41[22m [34m[vite][39m [vite] program reload
+[2m20:51:44[22m [34m[vite][39m [vite] program reload
+[2m20:51:50[22m [34m[vite][39m [vite] program reload
+[2m20:51:56[22m [34m[vite][39m [vite] program reload
+[2m20:52:00[22m [34m[watch][39m /src/layouts/Base.astro?astro&type=style&index=0&lang.css, /src/styles/global.css
+[2m20:52:00[22m [34m[vite][39m [vite] program reload
+[2m20:52:03[22m [34m[vite][39m [vite] program reload
+[2m20:52:08[22m [34m[vite][39m [vite] program reload
+[2m20:52:14[22m [34m[vite][39m [vite] program reload
+[2m20:54:05[22m [34m[vite][39m [vite] program reload
+[2m20:54:10[22m [34m[vite][39m [vite] program reload
+[2m20:54:16[22m [34m[vite][39m [vite] program reload
+[2m20:54:21[22m [34m[vite][39m [vite] program reload
+[2m20:54:42[22m [34m[watch][39m src/pages/index.astro
+[2m20:54:44[22m [34m[vite][39m [vite] program reload
+[2m20:54:48[22m [34m[vite][39m [vite] program reload
+[2m20:54:52[22m [34m[vite][39m [vite] program reload
+[2m20:54:59[22m [34m[vite][39m [vite] program reload
+[2m20:55:03[22m [34m[watch][39m src/pages/index.astro
+[2m20:55:03[22m [34m[vite][39m [vite] program reload
+[2m20:55:05[22m [34m[vite][39m [vite] program reload
+[2m20:55:07[22m [34m[vite][39m [vite] program reload
+[2m20:55:11[22m [34m[vite][39m [vite] program reload
+[2m20:56:12[22m [34m[watch][39m src/pages/index.astro
+[2m20:56:13[22m [34m[vite][39m [vite] program reload
+[2m20:56:15[22m [34m[vite][39m [vite] program reload
+[2m20:56:18[22m [34m[vite][39m [vite] program reload
+[2m20:56:22[22m [34m[vite][39m [vite] program reload
+[2m20:56:43[22m [34m[watch][39m src/pages/index.astro
+[2m20:56:43[22m [34m[vite][39m [vite] program reload
+[2m20:56:44[22m [34m[vite][39m [vite] program reload
+[2m20:56:47[22m [34m[vite][39m [vite] program reload
+[2m20:56:51[22m [34m[vite][39m [vite] program reload
+[2m20:57:00[22m [34m[vite][39m [vite] program reload
+[2m20:57:02[22m [34m[vite][39m [vite] program reload
+[2m20:57:04[22m [34m[vite][39m [vite] program reload
+[2m20:57:07[22m [34m[vite][39m [vite] program reload
+[2m20:57:14[22m [34m[vite][39m [vite] program reload
+[2m20:57:17[22m [34m[vite][39m [vite] program reload
+[2m20:57:19[22m [34m[vite][39m [vite] program reload
+[2m20:57:23[22m [34m[vite][39m [vite] program reload
+[2m20:58:04[22m [34m[vite][39m [vite] program reload
+[2m20:58:05[22m [34m[vite][39m [vite] program reload
+[2m20:58:09[22m [34m[vite][39m [vite] program reload
+[2m20:58:35[22m [34m[watch][39m src/pages/index.astro
+[2m20:58:36[22m [34m[vite][39m [vite] program reload
+[2m20:58:38[22m [34m[vite][39m [vite] program reload
+[2m20:58:40[22m [34m[vite][39m [vite] program reload
+[2m20:58:44[22m [34m[vite][39m [vite] program reload
+[2m20:59:06[22m [34m[vite][39m [vite] program reload
+[2m20:59:07[22m [34m[vite][39m [vite] program reload
+[2m20:59:09[22m [34m[vite][39m [vite] program reload
+[2m20:59:13[22m [34m[vite][39m [vite] program reload
+[2m21:00:09[22m [34m[vite][39m [vite] program reload
+[2m21:00:11[22m [34m[vite][39m [vite] program reload
+[2m21:03:28[22m [34m[watch][39m src/pages/index.astro
+[2m21:03:29[22m [34m[vite][39m [vite] program reload
+[2m21:03:30[22m [34m[vite][39m [vite] program reload
+[2m21:03:31[22m [34m[vite][39m [vite] program reload
+[2m21:03:32[22m [34m[vite][39m [vite] program reload
+[2m21:04:20[22m [34m[vite][39m [vite] program reload
+[2m21:04:22[22m [34m[vite][39m [vite] program reload
+[2m21:04:23[22m [34m[vite][39m [vite] program reload
+[2m21:04:24[22m [34m[vite][39m [vite] program reload
+[2m21:04:36[22m [34m[watch][39m src/pages/index.astro
+[2m21:04:37[22m [34m[vite][39m [vite] program reload
+[2m21:04:39[22m [34m[vite][39m [vite] program reload
+[2m21:04:41[22m [34m[vite][39m [vite] program reload
+[2m21:04:42[22m [34m[vite][39m [vite] program reload
+[2m21:04:50[22m [34m[vite][39m [vite] program reload
+[2m21:04:51[22m [34m[vite][39m [vite] program reload
+[2m21:04:53[22m [34m[vite][39m [vite] program reload
+[2m21:04:55[22m [34m[vite][39m [vite] program reload
+[2m21:05:06[22m [34m[watch][39m src/pages/index.astro
+[2m21:05:06[22m [34m[vite][39m [vite] program reload
+[2m21:05:07[22m [34m[vite][39m [vite] program reload
+[2m21:05:08[22m [34m[vite][39m [vite] program reload
+[2m21:05:09[22m [34m[vite][39m [vite] program reload
+[2m21:06:03[22m [34m[vite][39m [vite] program reload
+[2m21:06:04[22m [34m[vite][39m [vite] program reload
+[2m21:06:05[22m [34m[vite][39m [vite] program reload
+[2m21:06:06[22m [34m[vite][39m [vite] program reload
+[2m21:06:19[22m [34m[vite][39m [vite] program reload
+[2m21:06:21[22m [34m[vite][39m [vite] program reload
+[2m21:06:26[22m [34m[vite][39m [vite] program reload
+[2m21:06:27[22m [34m[vite][39m [vite] program reload
+[2m21:06:28[22m [34m[vite][39m [vite] program reload
+[2m21:06:29[22m [34m[vite][39m [vite] program reload
+[2m21:07:06[22m [34m[vite][39m [vite] program reload
+[2m21:07:07[22m [34m[vite][39m [vite] program reload
+[2m21:07:11[22m [34m[vite][39m [vite] program reload
+[2m21:07:12[22m [34m[vite][39m [vite] program reload
+[2m21:07:13[22m [34m[vite][39m [vite] program reload
+[2m21:07:14[22m [34m[vite][39m [vite] program reload
+[2m21:07:26[22m [34m[vite][39m [vite] program reload
+[2m21:07:28[22m [34m[vite][39m [vite] program reload
+[2m21:07:41[22m [34m[vite][39m [vite] program reload
+[2m21:07:42[22m [34m[vite][39m [vite] program reload
+[2m21:07:43[22m [34m[vite][39m [vite] program reload
+[2m21:07:44[22m [34m[vite][39m [vite] program reload
+[2m21:08:41[22m [34m[vite][39m [vite] program reload
+[2m21:08:45[22m [34m[vite][39m [vite] program reload
+[2m21:16:23[22m [34m[vite][39m [vite] program reload
+[2m21:16:25[22m [34m[vite][39m [vite] program reload
+[2m21:16:29[22m [34m[vite][39m [vite] program reload
+[2m21:16:34[22m [34m[vite][39m [32m✨ new dependencies optimized: [33mastro/zod[32m[39m
+[2m21:16:34[22m [34m[vite][39m [32m✨ optimized dependencies changed. reloading[39m
+[2m21:16:34[22m [34m[vite][39m [vite] An error happened during full reload
+The file does not exist at "C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/.vite/deps_ssr/chunk-F4I7DL2I.js" which is in the optimize deps directory. The dependency might be incompatible with the dep optimizer. Try adding it to `optimizeDeps.exclude`.
+Error: The file does not exist at "C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/.vite/deps_ssr/chunk-F4I7DL2I.js" which is in the optimize deps directory. The dependency might be incompatible with the dep optimizer. Try adding it to `optimizeDeps.exclude`.
+    at throwFileNotFoundInOptimizedDep (file:///C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/vite/dist/node/chunks/config.js:8980:32)
+    at LoadPluginContext.load (file:///C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/vite/dist/node/chunks/config.js:8963:6)
+    at async EnvironmentPluginContainer.load (file:///C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/vite/dist/node/chunks/config.js:28839:19)
+    at async loadAndTransform (file:///C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/vite/dist/node/chunks/config.js:22704:21)
+    at async fetchModule (file:///C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/vite/dist/node/chunks/config.js:34073:15)
+    at async Object.handleInvoke (file:///C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/vite/dist/node/chunks/config.js:25913:21)
+    at async __VITE_INVOKE_MODULE__ (file:///C:/Users/HP/Desktop/petrolpriceindia.com/node_modules/@cloudflare/vite-plugin/dist/index.mjs:55893:22)
+    at async #handleLoopbackCustomFetchService (C:\Users\HP\Desktop\petrolpriceindia.com\node_modules\miniflare\dist\src\index.js:90517:22)
+    at async #handleLoopback (C:\Users\HP\Desktop\petrolpriceindia.com\node_modules\miniflare\dist\src\index.js:90751:20)
+[2m21:16:34[22m [34m[vite][39m [vite] program reload
+[2m21:16:36[22m [34m[vite][39m [vite] program reload
+[2m21:16:39[22m [34m[vite][39m [vite] program reload
+[2m21:16:41[22m [34m[vite][39m [vite] program reload
+[2m21:16:41[22m [34m[vite][39m [vite] program reload
+[2m21:16:43[22m [34m[vite][39m [vite] program reload
+[2m21:17:17[22m [34m[vite][39m [vite] program reload
+[2m21:17:19[22m [34m[vite][39m [vite] program reload
+[2m21:17:22[22m [34m[vite][39m [vite] program reload
+[2m21:17:41[22m [34m[vite][39m [vite] program reload
+[2m21:17:42[22m [34m[vite][39m [vite] program reload
+[2m21:17:45[22m [34m[vite][39m [vite] program reload
+[2m21:17:48[22m [34m[vite][39m [vite] program reload
+[2m21:17:50[22m [34m[vite][39m [vite] program reload
+[2m21:17:51[22m [34m[vite][39m [vite] program reload
+[2m21:17:53[22m [34m[vite][39m [vite] program reload
+[2m21:18:00[22m [34m[vite][39m [vite] program reload
+[2m21:18:01[22m [34m[vite][39m [vite] program reload
+[2m21:18:03[22m [34m[vite][39m [vite] program reload
+[2m21:18:05[22m [34m[vite][39m [vite] program reload
+[2m21:18:07[22m [34m[vite][39m [vite] program reload
+[2m21:18:08[22m [34m[vite][39m [vite] program reload
+[2m21:18:10[22m [34m[vite][39m [vite] program reload
+[2m21:18:11[22m [34m[vite][39m [vite] program reload
+[2m21:18:19[22m [34m[vite][39m [vite] program reload
+[2m21:18:21[22m [34m[vite][39m [vite] program reload
+[2m21:19:03[22m [34m[vite][39m [vite] program reload
+[2m21:19:03[22m [34m[vite][39m [vite] program reload
+[2m21:19:53[22m [34m[vite][39m [vite] program reload
+[2m21:19:55[22m [34m[vite][39m [vite] program reload
+[2m21:19:56[22m [34m[vite][39m [vite] program reload
+[2m21:20:49[22m [34m[vite][39m [vite] program reload
+[2m21:20:49[22m [34m[vite][39m [vite] program reload
+[2m21:21:02[22m [34m[vite][39m [vite] program reload
+[2m21:21:03[22m [34m[vite][39m [vite] program reload
+[2m21:21:05[22m [34m[vite][39m [vite] program reload
+[2m21:21:22[22m [34m[vite][39m [vite] program reload
+[2m21:21:24[22m [34m[vite][39m [vite] program reload
+[2m21:24:25[22m [34m[vite][39m [vite] program reload
+[2m21:24:27[22m [34m[vite][39m [vite] program reload
+[2m21:24:31[22m [34m[vite][39m [vite] program reload
+[2m21:24:37[22m [34m[vite][39m [vite] program reload
+[2m21:24:43[22m [34m[vite][39m [vite] program reload
+[2m21:24:46[22m [34m[vite][39m [vite] program reload
+[2m21:24:53[22m [34m[vite][39m [vite] program reload
+[2m21:24:57[22m [34m[vite][39m [vite] program reload
+[2m21:25:00[22m [34m[vite][39m [vite] program reload
+[2m21:25:01[22m [34m[vite][39m [vite] program reload
+[2m21:25:04[22m [34m[vite][39m [vite] program reload
+[2m21:25:06[22m [34m[vite][39m [vite] program reload
+[2m21:25:29[22m [34m[vite][39m [vite] program reload
+[2m21:25:30[22m [34m[vite][39m [vite] program reload
+[2m21:25:33[22m [34m[vite][39m [vite] program reload
+[2m21:25:34[22m [34m[vite][39m [vite] program reload
+[2m21:26:15[22m [34m[vite][39m [vite] program reload
+[2m21:26:17[22m [34m[vite][39m [vite] program reload
+[2m21:27:49[22m [34m[glob-loader][39m Reloaded data from [32mwill-petrol-price-increase-in-india.md[39m
+[2m21:27:49[22m [34m[vite][39m [vite] program reload
+[2m21:27:50[22m [34m[vite][39m [vite] program reload
+[2m21:27:53[22m [34m[vite][39m [vite] program reload
+[2m21:27:55[22m [34m[vite][39m [vite] program reload
+[2m21:28:03[22m [34m[vite][39m [vite] program reload
+[2m21:28:06[22m [34m[vite][39m [vite] program reload
+[2m21:28:08[22m [34m[vite][39m [vite] program reload
+[2m21:28:10[22m [34m[vite][39m [vite] program reload
+[2m21:28:12[22m [34m[vite][39m [vite] program reload
+[2m21:28:14[22m [34m[vite][39m [vite] program reload
+[2m21:28:23[22m [34m[vite][39m [vite] program reload
+[2m21:28:24[22m [34m[vite][39m [vite] program reload
+[2m21:28:27[22m [34m[vite][39m [vite] program reload
+[2m21:28:31[22m [34m[vite][39m [vite] program reload
+[2m21:28:32[22m [34m[vite][39m [vite] program reload
+[2m21:28:35[22m [34m[vite][39m [vite] program reload
+[2m21:28:52[22m [34m[vite][39m [vite] program reload
+[2m21:28:53[22m [34m[vite][39m [vite] program reload
+[2m21:28:56[22m [34m[vite][39m [vite] program reload
+[2m21:32:23[22m [34m[vite][39m [vite] program reload
+[2m21:32:24[22m [34m[vite][39m [vite] program reload
+[2m21:32:26[22m [34m[vite][39m [vite] program reload
+[2m21:32:29[22m [34m[vite][39m [vite] program reload
+[2m21:32:36[22m [34m[watch][39m src/pages/index.astro
+[2m21:32:36[22m [34m[vite][39m [vite] program reload
+[2m21:32:38[22m [34m[vite][39m [vite] program reload
+[2m21:32:40[22m [34m[vite][39m [vite] program reload
+[2m21:32:42[22m [34m[vite][39m [vite] program reload
+[2m21:32:47[22m [34m[vite][39m [vite] program reload
+[2m21:32:49[22m [34m[vite][39m [vite] program reload
+[2m21:32:51[22m [34m[vite][39m [vite] program reload
+[2m21:32:52[22m [34m[vite][39m [vite] program reload
+[2m21:32:55[22m [34m[vite][39m [vite] program reload
+[2m21:34:21[22m [34m[vite][39m [vite] program reload
+[2m21:34:22[22m [34m[vite][39m [vite] program reload
+[2m21:34:24[22m [34m[vite][39m [vite] program reload
+[2m21:34:27[22m [34m[vite][39m [vite] program reload
+[2m21:34:42[22m [34m[vite][39m [vite] program reload
+[2m21:34:44[22m [34m[vite][39m [vite] program reload
+[2m21:34:46[22m [34m[vite][39m [vite] program reload
+[2m21:34:48[22m [34m[vite][39m [vite] program reload
