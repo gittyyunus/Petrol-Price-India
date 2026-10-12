@@ -67,6 +67,6 @@ If you want to verify this instead of taking anyone's word for it (including min
 
 ## Final thoughts
 
-The "CNG is the cheap, tax-light option" idea isn't entirely wrong — it's often still less expensive per kilometer than petrol — but it's not because CNG dodges taxation. It's taxed through basically the same central-excise-plus-state-VAT structure as petrol and diesel, it's just built on top of a genuinely different raw material cost that swings with global gas markets and each city's sourcing mix.
+The "CNG is the cheap, tax-light option" idea isn't entirely wrong — it's often still less expensive per kilometer than petrol — but it's not because CNG dodges taxation. It's taxed through basically the same central-excise-plus-state-VAT structure as petrol and diesel, it's just built on top of a genuinely different raw material cost that swings with global gas markets and each city's sourcing mix. For what that price gap is actually worth in rupees per kilometre — and when it stops being worth it — see [why CNG is better than petrol](/blog/why-cng-is-better-than-petrol/).
 
 Next time someone tells you CNG jumped in price "for no reason," you'll actually be able to explain which of the four pieces moved — and that's a lot more useful than just shrugging and blaming the pump.

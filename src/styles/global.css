@@ -108,4 +108,17 @@
   .prose-text blockquote {
     @apply border-l-2 border-hairline pl-4 text-mute italic;
   }
+
+  .prose-text table {
+    @apply w-full text-base border-collapse;
+  }
+
+  .prose-text th,
+  .prose-text td {
+    @apply border border-hairline px-3 py-2 text-left text-body align-top;
+  }
+
+  .prose-text thead th {
+    @apply bg-canvas-soft-2 font-semibold text-ink;
+  }
 }

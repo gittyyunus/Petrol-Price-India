@@ -1,0 +1,5 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "petrolpriceindia-com",
+  "workers_dev": false
+}

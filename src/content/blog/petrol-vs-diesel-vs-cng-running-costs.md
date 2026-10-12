@@ -99,4 +99,4 @@ My neighbour's diesel Innova does genuinely well because he drives it over 30,00
 
 My cousin ended up going with the petrol variant, not because it was cheaper per kilometre, but because her actual driving pattern (short daily commute, occasional weekend trips) never got her anywhere close to the CNG breakeven point. The dealership pitch made CNG sound like a no-brainer, but the math told a different story once we plugged in her real numbers.
 
-That's really the whole lesson here — there's no universal winner between petrol, diesel, and CNG. There's only the right answer for how much you actually drive, and you won't know that until you run your own numbers instead of trusting the sales pitch.
+That's really the whole lesson here — there's no universal winner between petrol, diesel, and CNG. There's only the right answer for how much you actually drive, and you won't know that until you run your own numbers instead of trusting the sales pitch. If your numbers did land on CNG, the full case for it — payback math, emissions data, safety rules and the honest trade-offs — is in [why CNG is better than petrol in India](/blog/why-cng-is-better-than-petrol/).
