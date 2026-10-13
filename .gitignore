@@ -14,6 +14,8 @@ preview.out
 preview.err
 dev.out
 dev.err
+wrangler-dev.out
+wrangler-dev.err
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
