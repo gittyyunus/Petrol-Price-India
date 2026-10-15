@@ -80,7 +80,7 @@ You don't need to trust my numbers. Here's how I verify it now whenever fuel pri
 - **Assuming VAT is a flat national rate.** It isn't. Every state sets its own, and some states also add a small additional cess on top.
 - **Applying VAT only to the base fuel cost.** As I found out the hard way, it applies to the base cost plus excise duty plus dealer commission.
 - **Comparing excise duty changes directly to pump price changes.** When the centre cuts excise duty, states don't have to pass on proportional VAT savings, so a ₹2 excise cut doesn't always mean a full ₹2 drop at the pump — sometimes it's more, sometimes less, because VAT recalculates on the new lower subtotal.
-- **Forgetting diesel and petrol have different excise rates.** They're not taxed at the same per-litre rate, so you can't use petrol numbers to estimate diesel prices.
+- **Forgetting diesel and petrol have different excise rates.** They're not taxed at the same per-litre rate — today's gap is a few rupees per litre in diesel's favour — so you can't use petrol numbers to estimate diesel prices. The full story of why that differential exists is in [why diesel is cheaper than petrol](/blog/why-diesel-is-cheaper-than-petrol/).
 - **Ignoring that rates change through the year.** Both the centre and states revise their rates periodically, especially when global crude prices move sharply, so a number that was accurate three months ago might already be outdated.
 
 ## Final thoughts

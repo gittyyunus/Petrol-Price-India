@@ -19,7 +19,7 @@ Here's the full working, the Delhi-NCR rules as they stand in 2026, and a plain 
 
 ## Why this question got harder between 2015 and 2026
 
-Ten years ago the answer was arithmetic. Diesel was ₹20–25 cheaper than petrol per litre in most states, diesel engines returned 25–30% more kilometres per unit of fuel, and the combination was so one-sided that diesel crossed half of all passenger car sales. Buy diesel, drive enough, save.
+Ten years ago the answer was arithmetic. Diesel was ₹20–25 cheaper than petrol per litre in most states, diesel engines returned 25–30% more kilometres per unit of fuel, and the combination was so one-sided that diesel crossed half of all passenger car sales. Buy diesel, drive enough, save. What built that ₹25 gap, and what shrank it to today's single digits, is a tax story in its own right — [why diesel is cheaper than petrol](/blog/why-diesel-is-cheaper-than-petrol/) works it out with the official numbers.
 
 Four things broke that shortcut:
 
