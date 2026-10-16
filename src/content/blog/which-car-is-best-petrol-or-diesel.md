@@ -243,7 +243,7 @@ Not categorically. The 10-year age ban's current status: after the Supreme Court
 
 ### Which gives better mileage, petrol or diesel?
 
-Diesel, always — typically 15–30% more kilometres per equivalent fuel unit because of higher energy density and better thermal efficiency. A petrol hatch at 18 km/l usually has a diesel sibling at 20–22 km/l; a petrol SUV at 12 km/l has a diesel at 15–16 km/l. But mileage is only half the equation — the diesel variant's higher price has to be repaid first, which is why better mileage doesn't automatically mean a better decision.
+Diesel, always — typically 15–30% more kilometres per equivalent fuel unit because of [higher energy density and better thermal efficiency](/blog/why-diesel-gives-more-mileage/). A petrol hatch at 18 km/l usually has a diesel sibling at 20–22 km/l; a petrol SUV at 12 km/l has a diesel at 15–16 km/l. But mileage is only half the equation — the diesel variant's higher price has to be repaid first, which is why better mileage doesn't automatically mean a better decision.
 
 ### Which holds resale value better, petrol or diesel?
 

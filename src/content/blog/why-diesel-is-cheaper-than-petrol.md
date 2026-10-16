@@ -128,7 +128,7 @@ So refining explains why diesel isn't *more* expensive than petrol — it doesn'
 
 ## The part that isn't about price at all
 
-Here's the twist that makes per-litre comparisons misleading: a litre of diesel simply contains more usable energy than a litre of petrol — roughly 38.6 MJ against 34.2 MJ, about 13% more. And a diesel engine converts a larger share of that energy into motion — around 40–45% thermal efficiency in a modern diesel, versus roughly 25–30% in a petrol engine.
+Here's the twist that makes per-litre comparisons misleading: a litre of diesel simply contains more usable energy than a litre of petrol — roughly 38.6 MJ against 34.2 MJ, about 13% more — and a diesel engine converts a larger share of that energy into motion, around 40–45% thermal efficiency in a modern diesel versus roughly 25–30% in a petrol engine. Both effects, and the exact conditions where the advantage shrinks, are worked out in [why diesel gives more mileage than petrol](/blog/why-diesel-gives-more-mileage/).
 
 Put together, that's why a diesel car typically returns 20–30% more kilometres per litre than an equivalent petrol one, and why diesel's *per-kilometre* cost advantage has historically been bigger than the ₹6–7 per-litre gap suggests. For what that's actually worth in real tracked numbers — maintenance, upfront price gap, breakeven point — see [petrol vs diesel vs CNG running costs](/blog/petrol-vs-diesel-vs-cng-running-costs/). The short version: the cheaper litre helps diesel, but the extra kilometres are what made diesel unbeable for a decade.
 
