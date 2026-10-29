@@ -40,7 +40,7 @@ Using Delhi prices as of early August 2026 — petrol around ₹102 per litre, d
 **CNG hatchback** (mileage roughly 24 km/kg, which is typical for factory-fitted CNG kits):
 ₹83 ÷ 24 = **₹3.46 per km**
 
-So on paper, CNG wins by a decent margin. But this is where my first mistake comes in.
+So on paper, CNG wins by a decent margin. (If you want the same comparison for one specific distance rather than per kilometre — say [how much fuel a 500 km drive actually eats](/blog/how-much-petrol-required-for-500-km/) — that's worked out litre by litre.) But this is where my first mistake comes in.
 
 ## The mistake I made: ignoring the upfront cost gap
 
