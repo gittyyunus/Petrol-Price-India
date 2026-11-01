@@ -218,6 +218,8 @@ Petrol is never a single pure compound. The liquid that comes out of the nozzle 
 *   **Butane:** ~2% to 5% (Fine-tunes cold-start volatility).
 *   **Performance Additive Package:** Corrosion inhibitors, metal deactivators, anti-icing agents, and multifunctional detergents that clean intake valves and fuel injectors.
 
+Each of these streams has a different density, which is why the finished blend has to be checked against a spec band — roughly 0.740–0.760 kg/l at 15 °C is the target for good petrol. For what that number means at the pump and how to verify it, see [how much petrol density is good](/blog/how-much-petrol-density-is-good/).
+
 ### The Modern Indian Component: 20% Ethanol (E20)
 At the refinery dispatch gantry or the OMC regional bulk storage terminal, the final piece is added: **Ethanol blending**. 
 

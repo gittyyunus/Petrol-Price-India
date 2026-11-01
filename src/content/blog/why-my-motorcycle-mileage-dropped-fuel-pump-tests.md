@@ -57,6 +57,8 @@ Every fuel has a defined density range set by BIS standards. Petrol should sit b
 
 If the number falls outside the standard range, or doesn't match what's logged in the register, you've got a legitimate basis for a complaint.
 
+I've since gone deep on this exact subject — what the ideal band is, why "denser is better" is mostly a myth, how temperature ruins uncorrected readings, and the correction formula itself — in [how much petrol density is good](/blog/how-much-petrol-density-is-good/). It's the companion piece to this test.
+
 One important thing I learned only after digging into this properly: since E20 (petrol blended with 20% ethanol) became the standard fuel in most of the country, some people assume any unusual density reading means ethanol adulteration. It doesn't — E20 is a government-mandated blend, formulated to still fall within that same 720-775 kg/m³ range. It's not the same thing as illegal adulteration, so don't panic over a normal E20 reading.
 
 ## Test 3: The 5-litre jar test (for short measurement, not adulteration)
