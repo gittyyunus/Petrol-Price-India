@@ -1,9 +1,12 @@
 import os
+import sys
 import time
 import requests
 import re
 from bs4 import BeautifulSoup
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
+
+IST = timezone(timedelta(hours=5, minutes=30))
 import logging
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -234,7 +237,11 @@ def disambiguate_slugs(all_fuel_data):
 def run():
     supabase = get_supabase()
     if not supabase:
-        return
+        logger.error("Supabase client failed to initialize. Exiting.")
+        sys.exit(1)
+    
+    today = datetime.now(IST).date().isoformat()
+    scraped_at = datetime.now(timezone.utc).isoformat()
     
     all_fuel_data = {}
     fuel_types = ["petrol", "diesel", "autogas", "cng"]
@@ -250,8 +257,8 @@ def run():
                     "city_slug": item["city_slug"],
                     "state_name": item["state_name"],
                     "state_slug": item["state_slug"],
-                    "date": date.today().isoformat(),
-                    "scraped_at": datetime.now(timezone.utc).isoformat()
+                    "date": today,
+                    "scraped_at": scraped_at
                 }
             
             all_fuel_data[city_id][f"{ft}_price"] = item["price"]
@@ -262,13 +269,15 @@ def run():
                 all_fuel_data[city_id][f"{ft}_change"] = item["change"]
     
     if not all_fuel_data:
-        logger.warning("No data scraped.")
-        return
+        logger.error("No fuel data was scraped. Exiting with error.")
+        sys.exit(1)
     
     logger.info(f"Scraped {len(all_fuel_data)} cities. Syncing with database...")
 
     disambiguate_slugs(all_fuel_data)
     
+    has_error = False
+
     # 1. Batch upsert cities
     city_records = [{
         "id": item["city_id"],
@@ -282,10 +291,9 @@ def run():
             supabase.table("cities").upsert(batch).execute()
         except Exception as e:
             logger.error(f"Error upserting city batch: {e}")
+            has_error = True
     
     # 2. Batch upsert price records
-    today = date.today().isoformat()
-    scraped_at = datetime.now(timezone.utc).isoformat()
     price_records = []
     for item in all_fuel_data.values():
         price_record = {
@@ -308,6 +316,11 @@ def run():
             supabase.table("prices").upsert(batch, on_conflict="city_id, date").execute()
         except Exception as e:
             logger.error(f"Error upserting price batch: {e}")
+            has_error = True
+
+    if has_error:
+        logger.error("One or more database upsert batches failed.")
+        sys.exit(1)
 
     logger.info(f"Sync complete: {len(all_fuel_data)} cities, {len(price_records)} price rows for {today}.")
 

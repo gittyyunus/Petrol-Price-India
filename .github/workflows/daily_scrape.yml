@@ -28,3 +28,23 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python scripts/scraper.py
+
+      - name: Verify scrape and DB sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python -c "
+          import sys
+          from datetime import datetime, timezone, timedelta
+          IST = timezone(timedelta(hours=5, minutes=30))
+          today = datetime.now(IST).date().isoformat()
+          from scripts.scraper import get_supabase
+          supabase = get_supabase()
+          res = supabase.table('prices').select('id', count='exact').eq('date', today).execute()
+          count = res.count or 0
+          print(f'Verification: {count} price records present for {today}')
+          if count == 0:
+              print(f'ERROR: No price records found for {today}')
+              sys.exit(1)
+          "
