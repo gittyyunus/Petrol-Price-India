@@ -577,14 +577,13 @@ const homepageSchema = {
       </div>
     </section>
 
-    {/* Top Movers — hidden entirely when prices are frozen and both lists are empty */}
-    {hasTopMovers && (
+    {/* Top Movers Section */}
     <section id="top-movers" class="py-24 bg-canvas-soft border-b border-hairline scroll-mt-20">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col md:flex-row justify-between items-baseline gap-4 mb-12">
           <div>
             <h2 class="text-3xl font-bold tracking-tight text-ink mb-2">Daily Top Movers</h2>
-            <p class="text-body">Biggest price changes in India today.</p>
+            <p class="text-body">{hasTopMovers ? 'Biggest price changes across India today.' : 'Tracking 6:00 AM IST daily revisions across India — rates held steady in major centers today.'}</p>
           </div>
           <div class="flex gap-2">
             <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-canvas border border-hairline">
@@ -649,7 +648,6 @@ const homepageSchema = {
         </div>
       </div>
     </section>
-    )}
     
     {/* Major Cities Grid */}
     <section class="py-24 bg-canvas border-b border-hairline">
