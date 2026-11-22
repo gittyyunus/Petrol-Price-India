@@ -207,6 +207,9 @@ if (type === 'city' && isValidFuel) {
   const insightCtx = {
     cityName: city.city_name,
     stateName: city.state_name,
+    stateSlug: city.state_slug,
+    stateFuelInfo: STATE_FUEL_DATA[city.state_slug] ?? null,
+    priceNum,
     fuel,
     fuelLabel,
     priceKey,
@@ -549,26 +552,14 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
                 </article>
               </section>
 
-              {/* Local take: hand-written guide for top cities, state-tax fallback for the rest */}
-              {citySpotlight ? (
+              {/* Local take: hand-written guide for top spotlight cities */}
+              {citySpotlight && (
                 <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
-                  <p class="text-[10px] font-mono uppercase tracking-widest text-mute mb-2">Local guide — {city.city_name}</p>
+                  <p class="text-[10px] font-mono uppercase tracking-widest text-mute mb-2">Local Spotlight — {city.city_name}</p>
                   <h2 class="text-2xl font-bold text-ink mb-4">{citySpotlight.heading}</h2>
                   {citySpotlight.paragraphs.map((p) => (
                     <p class="text-body mb-3">{p}</p>
                   ))}
-                </section>
-              ) : cityStateInfo && (
-                <section class="bg-canvas border border-hairline rounded-xl p-8 shadow-sm">
-                  <p class="text-[10px] font-mono uppercase tracking-widest text-mute mb-2">Local guide — {city.state_name}</p>
-                  <h2 class="text-2xl font-bold text-ink mb-4">What sets {fuelLabel.toLowerCase()} prices in {city.city_name} apart</h2>
-                  <p class="text-body mb-3">
-                    {city.city_name} follows the {cityStateInfo.state} tax code: {fuel === 'diesel' ? cityStateInfo.vatDiesel : cityStateInfo.vatPetrol} on {fuelLabel.toLowerCase()}, applied on top of base price plus central excise and dealer commission. That state layer — not the refinery gate — is what separates {city.city_name} from Delhi (19.40% VAT on petrol) or Mumbai (25% + ₹5.12/L) on any given morning.
-                  </p>
-                  <p class="text-body mb-3">
-                    Supply runs through {cityStateInfo.depot}. {cityStateInfo.driver}
-                  </p>
-                  <p class="text-body">Compare the 30-day high/low and nearby-city table on this page before a full tank: in flat months timing does not matter, in moving months the 6 AM revision does.</p>
                 </section>
               )}
 

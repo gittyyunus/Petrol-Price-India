@@ -1,3 +1,5 @@
+import type { StateFuelInfo } from './stateFuelData';
+
 // City-specific, data-driven content generator.
 //
 // Produces unique, human-sounding paragraphs per (city, fuel) using ONLY real
@@ -29,6 +31,8 @@ export type InsightRow = PriceRow;
 export type InsightContext = {
   cityName: string;
   stateName: string;
+  stateSlug?: string;
+  stateFuelInfo?: StateFuelInfo | null;
   fuel: string; // 'petrol' | 'diesel' | 'cng' | 'autogas'
   fuelLabel: string; // 'Petrol' | 'Diesel' | 'CNG' | 'AutoGas'
   priceKey: string; // e.g. 'petrol_price'
@@ -37,6 +41,7 @@ export type InsightContext = {
   unitShort?: string; // '/L' | '/kg'
   tankWord?: string; // '40-litre tank' | '10-kg cylinder'
   tankSize?: number; // 40 | 10
+  priceNum?: number | null;
   latest?: InsightRow | null;
   yesterday?: InsightRow | null;
   history: InsightRow[];
@@ -276,10 +281,108 @@ function trendSection(ctx: InsightContext): InsightSection {
   return { heading: `Recent Price Trend in ${ctx.cityName}`, paragraphs };
 }
 
+/** Detailed district & state tax breakdown and supply logistics */
+function taxAndSupplySection(ctx: InsightContext): InsightSection {
+  const paragraphs: string[] = [];
+  const stateInfo = ctx.stateFuelInfo;
+  const isCng = ctx.fuel === 'cng';
+  const isAutogas = ctx.fuel === 'autogas';
+  const isDiesel = ctx.fuel === 'diesel';
+
+  if (isCng) {
+    paragraphs.push(
+      `In ${ctx.cityName}, retail CNG prices are established by licensed City Gas Distribution (CGD) networks based on a blend of domestic APM (Administered Price Mechanism) natural gas, HPHT deepwater allocations, and imported Liquefied Natural Gas (LNG). Natural gas is transported through high-pressure national pipelines and compressed locally to over 200 bar for vehicle dispensing by weight in kilograms.`,
+    );
+    paragraphs.push(
+      `Unlike liquid motor fuels that bear flat central excise rates per litre, CNG is taxed with percentage-based excise plus ${ctx.stateName}'s state VAT. City-level retail pricing also factors in regional pipeline transmission tariffs, compressor station electricity overheads, and the distributor's operating margins across stations in ${ctx.cityName}.`,
+    );
+  } else if (isAutogas) {
+    paragraphs.push(
+      `AutoGas (Automotive LPG) in ${ctx.cityName} is benchmarked against international propane and butane contract prices (CP) set by Saudi Aramco, converted into Indian Rupees and dispensed by the litre. Oil Marketing Companies revise retail rates monthly to reflect global LPG movements and currency exchange variations.`,
+    );
+    paragraphs.push(
+      `Pump prices in ${ctx.cityName} incorporate freight from coastal import terminals, terminal handling charges, OMC logistics buffers, and ${ctx.stateName}'s specific LPG sales tax slab.`,
+    );
+  } else {
+    const vatRate = isDiesel ? (stateInfo?.vatDiesel ?? 'state-notified VAT') : (stateInfo?.vatPetrol ?? 'state-notified VAT');
+    paragraphs.push(
+      `Fuel pricing across petrol bunks in ${ctx.cityName} is determined under the dynamic daily pricing mechanism revised every morning at 6:00 AM IST. While the base refinery cost and central excise duty (₹19.90/L on petrol, ₹15.80/L on diesel) remain identical across India, the retail rate at ${ctx.cityName} pumps is shaped by ${ctx.stateName}'s tax framework: ${vatRate}. ${stateInfo?.driver ?? ''}`,
+    );
+    paragraphs.push(
+      `Supply for ${ctx.cityName} is primarily distributed through ${stateInfo?.depot ?? 'regional petroleum depots and pipeline terminals'}. Secondary distribution freight from these bulk terminals to local forecourts accounts for minor paise variations between pumps situated in city limits and highway retail outlets.`,
+    );
+  }
+
+  return {
+    heading: `How ${ctx.fuelLabel} Prices and Taxes Work in ${ctx.cityName}`,
+    paragraphs,
+  };
+}
+
+/** Commuter cost analysis and real full-tank math for this city */
+function commuterEconomicsSection(ctx: InsightContext): InsightSection {
+  const paragraphs: string[] = [];
+  const price = ctx.priceNum ?? priceOf(ctx.latest, ctx.priceKey);
+
+  if (price && price > 0) {
+    if (ctx.fuel === 'cng') {
+      const kgNeeded = 1200 / 22;
+      const monthlyCost = kgNeeded * price;
+      paragraphs.push(
+        `For daily commuters navigating ${ctx.cityName}, CNG provides one of the lowest running costs per kilometer among internal combustion vehicles. A private car owner traveling approximately 1,200 km per month with an average fuel efficiency of 22 km/kg uses roughly ${kgNeeded.toFixed(1)} kg of CNG, resulting in an estimated monthly spend of ${inr(monthlyCost)} at today's rate of ${inr(price)}/kg.`,
+      );
+      paragraphs.push(
+        `A complete refill of a standard 10-kg vehicle cylinder costs approximately ${inr(price * 10)} in ${ctx.cityName}, delivering roughly 180 to 220 km of driving range depending on urban traffic congestion and air-conditioning usage.`,
+      );
+    } else if (ctx.fuel === 'diesel') {
+      const litresNeeded = 1500 / 18;
+      const monthlyCost = litresNeeded * price;
+      paragraphs.push(
+        `Diesel remains the workhorse fuel for commercial transport, fleet operators, and high-mileage private vehicles in ${ctx.cityName}. A commuter or fleet vehicle logging 1,500 km per month at 18 km/L consumes approximately ${litresNeeded.toFixed(1)} litres of diesel, translating to a monthly fuel budget of ${inr(monthlyCost)} at current prices.`,
+      );
+      paragraphs.push(
+        `Filling a standard 50-litre tank on an SUV or utility vehicle in ${ctx.cityName} comes to approximately ${inr(50 * price)}. Commercial operators traveling across state borders should compare neighboring tax slabs before scheduling major bulk fills.`,
+      );
+    } else if (ctx.fuel === 'autogas') {
+      const litresNeeded = 1000 / 12;
+      const monthlyCost = litresNeeded * price;
+      paragraphs.push(
+        `A monthly commute of 1,000 km in an AutoGas-converted vehicle achieving 12 km/L requires roughly ${litresNeeded.toFixed(1)} litres, amounting to ${inr(monthlyCost)} at today's ${inr(price)}/L price in ${ctx.cityName}.`,
+      );
+      paragraphs.push(
+        `A typical 35-litre LPG cylinder fill in ${ctx.cityName} costs approximately ${inr(35 * price)}, delivering steady urban economy with significantly reduced particulate emissions compared to older petrol configurations.`,
+      );
+    } else {
+      // Petrol
+      const carLitres = 900 / 14;
+      const carCost = carLitres * price;
+      const bikeLitres = 450 / 45;
+      const bikeCost = bikeLitres * price;
+      paragraphs.push(
+        `At today's rate of ${inr(price)} per litre in ${ctx.cityName}, a typical four-wheeler commuter driving 30 km daily (900 km per month) at an average city mileage of 14 km/L requires about ${carLitres.toFixed(1)} litres of petrol, totaling approximately ${inr(carCost)} per month.`,
+      );
+      paragraphs.push(
+        `For two-wheeler riders traveling 15 km per day (450 km per month) at 45 km/L, petrol consumption averages 10 litres, costing roughly ${inr(bikeCost)} per month. Filling a compact hatchback's 35-litre tank costs ${inr(35 * price)}, while a 45-litre sedan tank comes to ${inr(45 * price)}.`,
+      );
+    }
+  }
+
+  paragraphs.push(
+    `To maximize fuel efficiency in ${ctx.cityName}, maintain correct tyre pressure specifications, avoid aggressive acceleration between traffic signals, and utilize the live trip calculator below to estimate exact route expenses before road trips.`,
+  );
+
+  return {
+    heading: `Commuter Cost & Trip Math for ${ctx.cityName} Drivers`,
+    paragraphs,
+  };
+}
+
 /* ---------------- public entry ---------------- */
 
 export function buildCityInsights(ctx: InsightContext): InsightSection[] {
-  const sections = [aboutSection(ctx)];
+  const sections: InsightSection[] = [aboutSection(ctx)];
+  sections.push(taxAndSupplySection(ctx));
+  sections.push(commuterEconomicsSection(ctx));
   if (ctx.nearby && ctx.nearby.length > 0) {
     const nb = nearbySection(ctx);
     if (nb && nb.paragraphs.length > 0) {

@@ -142,6 +142,14 @@ export const STATE_FUEL_DATA: Record<string, StateFuelInfo> = {
     driver:
       'Flat 22% on both fuels with a high per-litre floor — Ranchi diesel runs noticeably dearer than in neighbouring Odisha or Bengal.',
   },
+  ladakh: {
+    state: 'Ladakh',
+    vatPetrol: '24% MST + ₹2/L cess (₹3.50/L rebate)',
+    vatDiesel: '16% MST + ₹1/L cess (₹2.50/L rebate)',
+    depot: 'Bhatinda / Ambala terminals via Zojila / Leh supply lines',
+    driver:
+      'High altitude and severe winter logistics mean fuel is trucked over mountain passes with high seasonal freight costs.',
+  },
   karnataka: {
     state: 'Karnataka',
     vatPetrol: '29.84% sales tax',
