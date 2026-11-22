@@ -21,11 +21,12 @@ export function formatPrice(price: number) {
   }).format(price);
 }
 
-export function formatChange(change: number) {
+export function formatChange(change: number | null | undefined) {
+  if (change === null || change === undefined || Number.isNaN(change)) return '—';
   const absChange = Math.abs(change).toFixed(2);
   if (change > 0) return `▲ +${absChange}`;
   if (change < 0) return `▼ -${absChange}`;
-  return `— 0.00`;
+  return `— No Change`;
 }
 
 export function formatDate(dateStr: string) {

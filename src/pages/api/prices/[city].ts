@@ -25,13 +25,22 @@ export const GET: APIRoute = async ({ params }) => {
     });
   }
   
-  // Fetch last 30 days of prices
-  const { data: prices } = await supabase
+  // Fetch recent prices within 30 days of the latest recorded date
+  const { data: rawPrices } = await supabase
     .from('prices')
     .select('*')
     .eq('city_id', cityData.id)
     .order('date', { ascending: false })
-    .limit(30);
+    .limit(31);
+
+  let prices = rawPrices || [];
+  if (prices.length > 0 && prices[0]?.date) {
+    const latestDate = new Date(prices[0].date);
+    const cutoffDate = new Date(latestDate);
+    cutoffDate.setDate(cutoffDate.getDate() - 30);
+    const cutoffStr = cutoffDate.toISOString().split('T')[0];
+    prices = prices.filter(p => p.date >= cutoffStr);
+  }
     
   return new Response(JSON.stringify({
     city: cityData,

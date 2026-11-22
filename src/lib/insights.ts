@@ -34,6 +34,9 @@ export type InsightContext = {
   priceKey: string; // e.g. 'petrol_price'
   changeKey: string; // e.g. 'price_change'
   unitLabel: string; // 'per litre' | 'per kg'
+  unitShort?: string; // '/L' | '/kg'
+  tankWord?: string; // '40-litre tank' | '10-kg cylinder'
+  tankSize?: number; // 40 | 10
   latest?: InsightRow | null;
   yesterday?: InsightRow | null;
   history: InsightRow[];
@@ -134,25 +137,19 @@ function aboutSection(ctx: InsightContext): InsightSection {
 
   if (hist) {
     const span = hist.high - hist.low;
+    const isFullMonth = ctx.history.length >= 25;
+    const timeSpanText = isFullMonth ? 'in the last 30 days' : `in recent recordings (${ctx.history.length} days)`;
     if (span < 0.01) {
       paragraphs.push(
-        pick(
-          [
-            `The same rate has held for the entire 30-day window — nothing has moved.`,
-            `It has stayed pinned at today's price throughout the past month.`,
-            `The price has not moved once in the last 30 days; today's rate is exactly where the month started.`,
-          ],
-          seedFor(ctx.cityName.toLowerCase(), ctx.fuel),
-          4,
-        ),
+        `The price has not moved ${timeSpanText}, holding steady at ${inr(price ?? hist.high)} ${ctx.unitLabel}.`
       );
     } else if (span < 0.05) {
       paragraphs.push(
-        `Over the past month it has barely moved, shifting only a few paise around ${inr(price)} ${ctx.unitLabel}.`,
+        `Over this recent recording window, it has barely moved, shifting only a few paise around ${inr(price ?? hist.high)} ${ctx.unitLabel}.`,
       );
     } else {
       paragraphs.push(
-        `Over the last 30 days it has ranged between ${inr(hist.low)} and ${inr(hist.high)} ${ctx.unitLabel}, a spread of ${inr(span)} — wide enough that the timing of a full tank genuinely matters.`,
+        `Over ${timeSpanText}, it has ranged between ${inr(hist.low)} and ${inr(hist.high)} ${ctx.unitLabel}, a spread of ${inr(span)} — wide enough that the timing of a fill-up matters.`,
       );
     }
   } else {
@@ -205,17 +202,16 @@ function nearbySection(ctx: InsightContext): InsightSection {
   const paragraphs: string[] = [];
 
   if (!cmp) {
-    paragraphs.push(
-      `There isn't enough neighbouring data synced yet to draw a fair comparison for ${ctx.cityName}. Check back tomorrow when the daily refresh has settled.`,
-    );
-    return { heading: `How ${ctx.cityName} Compares to Nearby Cities`, paragraphs };
+    return { heading: `${ctx.cityName} Versus Nearby Cities`, paragraphs };
   }
 
   const { price, cheapest, priciest, diff, hasMoreCities } = cmp;
+  const tankSize = ctx.tankSize ?? (ctx.fuel === 'cng' ? 10 : 40);
+  const tankWord = ctx.tankWord ?? (ctx.fuel === 'cng' ? '10-kg cylinder' : '40-litre tank');
 
   if (diff > 0.05) {
     paragraphs.push(
-      `Around ${ctx.cityName}, the cheapest recorded today is ${cheapest.city} at ${inr(cheapest.p)} ${ctx.unitLabel}. Filling up there instead of ${ctx.cityName} saves about ${inr(diff)} ${ctx.unitLabel} — roughly ${inr(diff * 40)} on a typical 40-litre tank.`,
+      `Around ${ctx.cityName}, the cheapest recorded today is ${cheapest.city} at ${inr(cheapest.p)} ${ctx.unitLabel}. Filling up there instead of ${ctx.cityName} saves about ${inr(diff)} ${ctx.unitLabel} — roughly ${inr(diff * tankSize)} on a typical ${tankWord}.`,
     );
   } else {
     paragraphs.push(
@@ -232,18 +228,20 @@ function nearbySection(ctx: InsightContext): InsightSection {
   return { heading: `${ctx.cityName} Versus Nearby Cities`, paragraphs };
 }
 
-/** A trend write-up built from the real 30-day high/low. */
+/** A trend write-up built from confirmed recent prices. */
 function trendSection(ctx: InsightContext): InsightSection {
   const hist = highLow(ctx.history, ctx.priceKey);
   const price = priceOf(ctx.latest, ctx.priceKey);
 
   const paragraphs: string[] = [];
+  const isFullMonth = ctx.history.length >= 25;
+  const periodLabel = isFullMonth ? 'the last 30 days' : `recent tracking (${ctx.history.length} recorded days)`;
 
   if (!hist || !price) {
     paragraphs.push(
-      `Without a full month of recorded candles, drawing a trend line for ${ctx.cityName} would be guesswork — so we're not going to fake one. Short history, honest read.`,
+      `Without enough recorded days, drawing an extended trend line for ${ctx.cityName} would be guesswork — so we only track confirmed data.`,
     );
-    return { heading: `The 30-Day Picture in ${ctx.cityName}`, paragraphs };
+    return { heading: `Recent Price Trend in ${ctx.cityName}`, paragraphs };
   }
 
   const span = hist.high - hist.low;
@@ -251,35 +249,43 @@ function trendSection(ctx: InsightContext): InsightSection {
 
   if (span === 0) {
     paragraphs.push(
-      `${ctx.fuelLabel} in ${ctx.cityName} has not moved at all in the past 30 days, holding at ${inr(price)} ${ctx.unitLabel} the entire window.`,
+      `${ctx.fuelLabel} in ${ctx.cityName} has remained steady across ${periodLabel}, holding at ${inr(price)} ${ctx.unitLabel}.`,
     );
     paragraphs.push(
-      `A completely flat month usually signals steady supply and stable taxes — there is simply no movement to track.`,
+      `A completely flat period usually signals steady supply and stable taxes — there is simply no movement to track.`,
     );
-    return { heading: `The 30-Day Picture in ${ctx.cityName}`, paragraphs };
+    return { heading: `Recent Price Trend in ${ctx.cityName}`, paragraphs };
   }
 
   if (pct < 1) {
     paragraphs.push(
-      `Over the last 30 days, ${ctx.fuelLabel} in ${ctx.cityName} barely moved — the gap between its highest and lowest print was about ${inr(span)}, under 1% of the current ${inr(price)} ${ctx.unitLabel} level.`,
+      `Over ${periodLabel}, ${ctx.fuelLabel} in ${ctx.cityName} barely moved — the gap between its highest and lowest print was about ${inr(span)}, under 1% of the current ${inr(price)} ${ctx.unitLabel} level.`,
     );
     paragraphs.push(
       `A range that tight usually means supply and taxes are steady, so there's little point in timing your fill-up.`,
     );
   } else {
     paragraphs.push(
-      `${ctx.fuelLabel} in ${ctx.cityName} swung between ${inr(hist.low)} and ${inr(hist.high)} ${ctx.unitLabel} in the past month — a ${inr(span)} gap, or around ${pct.toFixed(1)}% off the present ${inr(price)} mark.`,
+      `${ctx.fuelLabel} in ${ctx.cityName} swung between ${inr(hist.low)} and ${inr(hist.high)} ${ctx.unitLabel} across ${periodLabel} — a ${inr(span)} gap, or around ${pct.toFixed(1)}% off the present ${inr(price)} mark.`,
     );
     paragraphs.push(
       `When that window is moving around, checking the daily 6 AM revision before you commit to a tank makes sense.`,
     );
   }
 
-  return { heading: `The 30-Day Picture in ${ctx.cityName}`, paragraphs };
+  return { heading: `Recent Price Trend in ${ctx.cityName}`, paragraphs };
 }
 
 /* ---------------- public entry ---------------- */
 
 export function buildCityInsights(ctx: InsightContext): InsightSection[] {
-  return [aboutSection(ctx), nearbySection(ctx), trendSection(ctx)];
+  const sections = [aboutSection(ctx)];
+  if (ctx.nearby && ctx.nearby.length > 0) {
+    const nb = nearbySection(ctx);
+    if (nb && nb.paragraphs.length > 0) {
+      sections.push(nb);
+    }
+  }
+  sections.push(trendSection(ctx));
+  return sections;
 }

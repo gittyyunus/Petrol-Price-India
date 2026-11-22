@@ -9,6 +9,7 @@ import { buildCityInsights, computeNearbyComparison, highLow } from '../lib/insi
 import { STATE_FUEL_DATA, MUMBAI_DELHI_EXPLAINER } from '../lib/stateFuelData';
 import { CITY_SPOTLIGHTS } from '../lib/citySpotlights';
 import { STATE_SPOTLIGHTS } from '../lib/stateSpotlights';
+import { NEARBY_CLUSTERS } from '../lib/nearbyClusters';
 import RelatedGuides from '../components/RelatedGuides.astro';
 import CalculatorEmbed from '../components/CalculatorEmbed.astro';
 import { Share2, Info, ChevronRight, MapPin, ArrowUpDown } from '@lucide/astro';
@@ -105,6 +106,13 @@ if (!type || !isValidFuel) {
 const today = new Date().toISOString().split('T')[0];
 
 const fuelLabel = fuel === 'autogas' ? 'AutoGas' : fuel === 'cng' ? 'CNG' : fuel.charAt(0).toUpperCase() + fuel.slice(1);
+const isCng = fuel === 'cng';
+const unitLabel = isCng ? 'per kg' : 'per litre';
+const unitShort = isCng ? '/kg' : '/L';
+const unitWord = isCng ? 'kg' : 'litre';
+const tankWord = isCng ? '10-kg cylinder' : '40-litre tank';
+const tankSize = isCng ? 10 : 40;
+
 const priceKey = `${fuel}_price`;
 const changeKey = fuel === 'petrol' ? 'price_change' : `${fuel}_change`;
 
@@ -117,6 +125,9 @@ let highLowFaqText = "";
 let nearbyFaqText = "";
 let noindex = false;
 let reportHref = "/contact";
+let historyCount = 0;
+let isThirtyDays = false;
+let historyBadgeLabel = 'Recent Record';
 
 // --- City Logic ---
 let latestPrice, yesterdayPrice, priceHistory, nearbyPrices, nearbyCitiesList;
@@ -133,22 +144,39 @@ if (type === 'city' && isValidFuel) {
     .limit(31);
 
   latestPrice = priceData?.[0];
-  yesterdayPrice = priceData?.[1];
-  priceHistory = priceData || [];
 
-  nearbyCitiesList = await supabase
-    .from('cities')
-    .select('*')
-    .eq('state_name', city.state_name)
-    .neq('id', city.id)
-    .limit(6);
+  // Exclude records older than 30 days from the latest record's date (fixes the 75-day gap)
+  let recentRows = [];
+  if (latestPrice?.date) {
+    const latestDateObj = new Date(latestPrice.date);
+    const cutoffDate = new Date(latestDateObj);
+    cutoffDate.setDate(cutoffDate.getDate() - 30);
+    const cutoffStr = cutoffDate.toISOString().split('T')[0];
+    recentRows = (priceData || []).filter((r) => r.date >= cutoffStr);
+  }
+  priceHistory = recentRows.length > 0 ? recentRows : (priceData ? [priceData[0]] : []);
+  historyCount = priceHistory.length;
+  isThirtyDays = historyCount >= 28;
+  historyBadgeLabel = isThirtyDays ? 'Last 30 Days' : historyCount > 1 ? `Last ${historyCount} Days` : 'Recent Record';
+  yesterdayPrice = priceHistory.length > 1 ? priceHistory[1] : null;
+
+  // Curated nearby cities: avoid hallucinating cities hundreds of kilometers away
+  const nearbySlugs = NEARBY_CLUSTERS[targetSlug] || [];
+  if (nearbySlugs.length > 0) {
+    const { data: nCities } = await supabase
+      .from('cities')
+      .select('*')
+      .in('city_slug', nearbySlugs);
+    nearbyCitiesList = nCities || [];
+  } else {
+    nearbyCitiesList = [];
+  }
 
   // Compare neighbours on the same date as this page's own latest reading, not
   // on the server's UTC "today" — the scraper runs on IST and the UTC date can
-  // be a day ahead, which previously returned zero rows and forced the
-  // "not enough neighbouring data" fallback even for major cities.
+  // be a day ahead.
   const nearbyDate = latestPrice?.date ?? today;
-  const nearbyIds = nearbyCitiesList.data?.map(c => c.id) || [];
+  const nearbyIds = nearbyCitiesList?.map(c => c.id) || [];
   let nbPrices = [];
   if (nearbyIds.length > 0) {
     const { data } = await supabase
@@ -156,26 +184,22 @@ if (type === 'city' && isValidFuel) {
       .select('*')
       .in('city_id', nearbyIds)
       .eq('date', nearbyDate);
-    nbPrices = data || [];
+    nbPrices = (data || []).filter(item => item[priceKey] != null && Number(item[priceKey]) > 0);
   }
   nearbyPrices = nbPrices;
 
-  // Only publish price figures that actually exist. When this fuel has no
-  // recorded price for the city, fall back to copy without numbers so neither
-  // the visible page nor the JSON-LD schema ever shows "XX.XX" placeholders.
-  // NOTE: assigned to top-level `let`s (not `const`) so the template below can access them.
+  // Only publish price figures that actually exist.
   hasPrice = latestPrice?.[priceKey] != null && Number(latestPrice[priceKey]) > 0;
   priceNum = hasPrice ? Number(latestPrice[priceKey]) : null;
   changeNum = latestPrice?.[changeKey] != null ? Number(latestPrice[changeKey]) : 0;
-  // Display the date the price was actually recorded, not the server date —
-  // otherwise a stale scrape prints "Today (8 Sept)" next to Sept-6 data.
+  // Display the date the price was actually recorded, not the server date
   priceDate = latestPrice?.date ?? today;
 
   title = hasPrice
-    ? `${fuelLabel} Price in ${city.city_name} Today (${formatDate(priceDate)}) — ₹${priceNum.toFixed(2)}/Litre`
-    : `${fuelLabel} Price in ${city.city_name} — 30-Day History, Trends & Comparison`;
+    ? `${fuelLabel} Price in ${city.city_name} Today (${formatDate(priceDate)}) — ₹${priceNum.toFixed(2)}${unitShort}`
+    : `${fuelLabel} Price in ${city.city_name} — Recent History, Trends & Comparison`;
   description = hasPrice
-    ? `Today's ${fuel} price in ${city.city_name} is ₹${priceNum.toFixed(2)} per litre (${changeNum >= 0 ? '+' : ''}${changeNum.toFixed(2)} from yesterday). Check 30-day price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}.`
+    ? `Today's ${fuel} price in ${city.city_name} is ₹${priceNum.toFixed(2)} ${unitLabel} (${changeNum > 0 ? '+' : ''}${changeNum.toFixed(2)} from yesterday). Check recent price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}.`
     : `Check ${fuel} price history, trends and fuel cost calculator for ${city.city_name}, ${city.state_name}. Updated for ${formatDate(priceDate)}.`;
 
   reportHref = `/contact?subject=data&message=${encodeURIComponent(`Issue with ${fuelLabel} price in ${city.city_name} (/${fuel}-price-in-${city.city_slug}/): `)}`;
@@ -187,7 +211,10 @@ if (type === 'city' && isValidFuel) {
     fuelLabel,
     priceKey,
     changeKey,
-    unitLabel: 'per litre',
+    unitLabel,
+    unitShort,
+    tankWord,
+    tankSize,
     latest: latestPrice,
     yesterday: yesterdayPrice,
     history: priceHistory,
@@ -198,20 +225,22 @@ if (type === 'city' && isValidFuel) {
 
   highLowFaqText = (() => {
     const hl = highLow(priceHistory, priceKey);
-    if (!hl) return `We don't have enough recorded history for ${city.city_name} yet to state a reliable 30-day high and low.`;
-    if (hl.high === hl.low) return `In the last 30 days, the ${fuelLabel} price in ${city.city_name} has not moved, holding at ₹${hl.high.toFixed(2)} per litre the entire window.`;
-    return `In the last 30 days, the highest ${fuelLabel} price in ${city.city_name} was ₹${hl.high.toFixed(2)} per litre and the lowest was ₹${hl.low.toFixed(2)} per litre.`;
+    if (!hl) return `We don't have enough recorded recent history for ${city.city_name} yet to state a reliable high and low.`;
+    const periodText = isThirtyDays ? 'In the last 30 days' : `In recent recordings (${historyCount} days)`;
+    if (hl.high === hl.low) return `${periodText}, the ${fuelLabel} price in ${city.city_name} has held steady at ₹${hl.high.toFixed(2)} ${unitLabel}.`;
+    return `${periodText}, the highest ${fuelLabel} price in ${city.city_name} was ₹${hl.high.toFixed(2)} ${unitLabel} and the lowest was ₹${hl.low.toFixed(2)} ${unitLabel}.`;
   })();
 
   nearbyFaqText = (() => {
+    if (!nearbyPrices || nearbyPrices.length === 0) return "";
     const cmp = computeNearbyComparison(insightCtx);
-    if (!cmp) return `There isn't enough neighbouring data synced yet to draw a fair comparison for ${city.city_name}. Check back tomorrow when the daily refresh has settled.`;
+    if (!cmp) return "";
     const { price, cheapest, priciest, diff, hasMoreCities } = cmp;
     let text = diff > 0.05
-      ? `Nearby, the cheapest ${fuelLabel} today is ${cheapest.city} at ₹${cheapest.p.toFixed(2)} per litre — filling up there instead of ${city.city_name} saves about ₹${diff.toFixed(2)} per litre (roughly ₹${(diff * 40).toFixed(2)} on a 40-litre tank).`
-      : `Within a short drive of ${city.city_name}, prices are essentially level — the nearest city in our data comes in within a few paise of ₹${price.toFixed(2)} per litre.`;
+      ? `Nearby, the cheapest ${fuelLabel} today is ${cheapest.city} at ₹${cheapest.p.toFixed(2)} ${unitLabel} — filling up there instead of ${city.city_name} saves about ₹${diff.toFixed(2)} ${unitLabel} (roughly ₹${(diff * tankSize).toFixed(2)} on a typical ${tankWord}).`
+      : `Within a short drive of ${city.city_name}, prices are essentially level — the nearest city in our data comes in within a few paise of ₹${price.toFixed(2)} ${unitLabel}.`;
     if (hasMoreCities && city.city_name !== priciest.city) {
-      text += ` On the other end, ${priciest.city} is the highest-priced of the nearby cities at ₹${priciest.p.toFixed(2)} per litre.`;
+      text += ` On the other end, ${priciest.city} is the highest-priced of the nearby cities at ₹${priciest.p.toFixed(2)} ${unitLabel}.`;
     }
     return text;
   })();
@@ -226,7 +255,7 @@ if (type === 'city' && isValidFuel) {
           "name": `What is the ${fuelLabel} price in ${city.city_name} today?`,
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": `The ${fuelLabel} price in ${city.city_name} today is ₹${priceNum.toFixed(2)} per litre.`
+            "text": `The ${fuelLabel} price in ${city.city_name} today is ₹${priceNum.toFixed(2)} ${unitLabel}.`
           }
         },
         {
@@ -234,7 +263,7 @@ if (type === 'city' && isValidFuel) {
           "name": `Is the ${fuel} price going up in ${city.city_name}?`,
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": `As of today, the ${fuel} price in ${city.city_name} is ₹${priceNum.toFixed(2)}. Recent trends show a ${changeNum > 0 ? 'rising' : 'fluctuating'} pattern depending on international crude rates.`
+            "text": `As of today, the ${fuel} price in ${city.city_name} is ₹${priceNum.toFixed(2)}. Recent trends show a ${changeNum > 0 ? 'rising' : 'steady'} pattern depending on international crude rates.`
           }
         },
       ] : []),
@@ -256,20 +285,22 @@ if (type === 'city' && isValidFuel) {
       },
       {
         "@type": "Question",
-        "name": `What was the highest and lowest ${fuelLabel} price in ${city.city_name} in the last 30 days?`,
+        "name": `What was the highest and lowest ${fuelLabel} price in ${city.city_name} recently?`,
         "acceptedAnswer": {
           "@type": "Answer",
           "text": highLowFaqText
         }
       },
-      {
-        "@type": "Question",
-        "name": `How does the ${fuelLabel} price in ${city.city_name} compare to nearby cities?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": nearbyFaqText
+      ...(nearbyFaqText ? [
+        {
+          "@type": "Question",
+          "name": `How does the ${fuelLabel} price in ${city.city_name} compare to nearby cities?`,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": nearbyFaqText
+          }
         }
-      }
+      ] : [])
     ]
   };
 
@@ -366,7 +397,7 @@ if (type === 'state' && isValidFuel) {
         "name": `What is the average ${fuelLabel} price in ${stateName} today?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `The average ${fuelLabel} price in ${stateName} today is ₹${avgPrice} per litre, based on ${prices?.length || 0} cities.`
+          "text": `The average ${fuelLabel} price in ${stateName} today is ₹${avgPrice} ${unitLabel}, based on ${prices?.length || 0} cities.`
         }
       },
       {
@@ -374,7 +405,7 @@ if (type === 'state' && isValidFuel) {
         "name": `Which city has the cheapest ${fuelLabel} in ${stateName}?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `The cheapest ${fuelLabel} in ${stateName} today is ${minPrice?.city_name || 'N/A'} at ₹${minPrice?.[priceKey]?.toFixed(2) || 'N/A'} per litre.`
+          "text": `The cheapest ${fuelLabel} in ${stateName} today is ${minPrice?.city_name || 'N/A'} at ₹${minPrice?.[priceKey]?.toFixed(2) || 'N/A'} ${unitLabel}.`
         }
       },
       {
@@ -382,7 +413,7 @@ if (type === 'state' && isValidFuel) {
         "name": `Which city has the highest ${fuelLabel} price in ${stateName}?`,
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": `The highest ${fuelLabel} price in ${stateName} today is in ${maxPrice?.city_name || 'N/A'} at ₹${maxPrice?.[priceKey]?.toFixed(2) || 'N/A'} per litre.`
+          "text": `The highest ${fuelLabel} price in ${stateName} today is in ${maxPrice?.city_name || 'N/A'} at ₹${maxPrice?.[priceKey]?.toFixed(2) || 'N/A'} ${unitLabel}.`
         }
       },
       {
@@ -498,7 +529,7 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
               </section>
               
               <section class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm">
-                <h2 class="text-xl font-bold text-ink mb-6">30-Day {fuelLabel} Price Trend</h2>
+                <h2 class="text-xl font-bold text-ink mb-6">Recent {fuelLabel} Price Trend</h2>
                 <div class="h-64 sm:h-80 w-full relative"><canvas id="priceChart" class="max-w-full"></canvas></div>
               </section>
               
@@ -582,13 +613,13 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
                   {hasPrice && (
                     <div class="border-b border-hairline pb-4 last:border-0">
                       <h3 class="text-base font-bold text-ink mb-2">What is the {fuelLabel} price in {city.city_name} today?</h3>
-                      <p class="text-sm text-body">The current {fuelLabel} price in {city.city_name} is <strong>₹{priceNum.toFixed(2)}</strong> per litre as of {formatDate(priceDate)}.</p>
+                      <p class="text-sm text-body">The current {fuelLabel} price in {city.city_name} is <strong>₹{priceNum.toFixed(2)}</strong> {unitLabel} as of {formatDate(priceDate)}.</p>
                     </div>
                   )}
                   {hasPrice && (
                     <div class="border-b border-hairline pb-4 last:border-0">
                       <h3 class="text-base font-bold text-ink mb-2">Is the {fuelLabel} price going up in {city.city_name}?</h3>
-                      <p class="text-sm text-body">Today's price shows a change of <strong>{formatChange(latestPrice?.[changeKey])}</strong> compared to yesterday. Recent trends indicate a {changeNum > 0 ? 'rising' : 'stable'} market in {city.state_name}.</p>
+                      <p class="text-sm text-body">Today's price shows a change of <strong>{formatChange(latestPrice?.[changeKey])}</strong> compared to yesterday. Recent trends indicate a {changeNum > 0 ? 'rising' : 'steady'} market in {city.state_name}.</p>
                     </div>
                   )}
                   <div class="border-b border-hairline pb-4 last:border-0">
@@ -600,25 +631,27 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
                     <p class="text-sm text-body">Fuel rates in {city.city_name} are updated daily at 6:00 AM IST by Oil Marketing Companies (OMCs) like IOC, HPCL, and BPCL.</p>
                   </div>
                   <div class="border-b border-hairline pb-4 last:border-0">
-                    <h3 class="text-base font-bold text-ink mb-2">What was the highest and lowest {fuelLabel} price in {city.city_name} in the last 30 days?</h3>
+                    <h3 class="text-base font-bold text-ink mb-2">What was the highest and lowest {fuelLabel} price in {city.city_name} recently?</h3>
                     <p class="text-sm text-body">{highLowFaqText}</p>
                   </div>
-                  <div class="border-b border-hairline pb-4 last:border-0">
-                    <h3 class="text-base font-bold text-ink mb-2">How does the {fuelLabel} price in {city.city_name} compare to nearby cities?</h3>
-                    <p class="text-sm text-body">{nearbyFaqText}</p>
-                  </div>
+                  {nearbyFaqText && (
+                    <div class="border-b border-hairline pb-4 last:border-0">
+                      <h3 class="text-base font-bold text-ink mb-2">How does the {fuelLabel} price in {city.city_name} compare to nearby cities?</h3>
+                      <p class="text-sm text-body">{nearbyFaqText}</p>
+                    </div>
+                  )}
                 </div>
               </section>
 
               <section class="bg-canvas border border-hairline rounded-xl overflow-hidden shadow-sm">
                 <div class="px-6 py-4 border-b border-hairline flex justify-between items-center bg-canvas">
-                  <h2 class="text-xl font-bold text-ink">Price History</h2>
-                  <span class="text-xs font-mono text-mute uppercase tracking-widest">Last 30 Days</span>
+                  <h2 class="text-xl font-bold text-ink">Recent Price History</h2>
+                  <span class="text-xs font-mono text-mute uppercase tracking-widest">{historyBadgeLabel}</span>
                 </div>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left">
                     <thead class="bg-canvas-soft-2 text-[10px] font-mono uppercase tracking-widest text-mute">
-                      <tr><th class="px-6 py-3">Date</th><th class="px-6 py-3 text-right">Price (₹/L)</th><th class="px-6 py-3 text-right">Change</th></tr>
+                      <tr><th class="px-6 py-3">Date</th><th class="px-6 py-3 text-right">Price (₹{unitShort})</th><th class="px-6 py-3 text-right">Change</th></tr>
                     </thead>
                     <tbody class="divide-y divide-hairline">
                       {priceHistory.map((item) => (
@@ -642,35 +675,37 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
                 <div class="space-y-6">
                   <div><p class="text-xs text-canvas/60 uppercase tracking-widest mb-1">Yesterday's Price</p><p class="text-2xl font-bold">₹{yesterdayPrice?.[priceKey]?.toFixed(2) || 'N/A'}</p></div>
                   <div class="pt-6 border-t border-canvas/10">
-                    <p class="text-xs text-canvas/60 uppercase tracking-widest mb-1">30-Day High</p>
+                    <p class="text-xs text-canvas/60 uppercase tracking-widest mb-1">{isThirtyDays ? '30-Day High' : 'Recent High'}</p>
                     <p class="text-2xl font-bold">₹{priceHistory.length > 0 ? Math.max(...priceHistory.map(p => p[priceKey] || 0)).toFixed(2) : 'N/A'}</p>
                   </div>
                   <div class="pt-6 border-t border-canvas/10">
-                    <p class="text-xs text-canvas/60 uppercase tracking-widest mb-1">30-Day Low</p>
+                    <p class="text-xs text-canvas/60 uppercase tracking-widest mb-1">{isThirtyDays ? '30-Day Low' : 'Recent Low'}</p>
                     <p class="text-2xl font-bold">₹{priceHistory.length > 0 ? Math.min(...priceHistory.map(p => p[priceKey] || Infinity)).toFixed(2) : 'N/A'}</p>
                   </div>
                 </div>
               </div>
-              <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm">
-                <div class="flex items-center gap-2 mb-6"><MapPin class="w-4 h-4 text-mute" /><h2 class="text-sm font-bold uppercase tracking-wider text-mute">Nearby Cities</h2></div>
-                <div class="space-y-4">
-                  {nearbyPrices?.map(item => {
-                    const city = nearbyCitiesList.data?.find(c => c.id === item.city_id);
-                    if (!city) return null;
-                    return (
-                      <a href={`/${fuel}-price-in-${city.city_slug}`} class="flex justify-between items-center group">
-                        <span class="text-sm font-medium group-hover:text-primary transition-colors">{item.city_name}</span>
-                        <div class="text-right">
-                          <p class="text-sm font-mono font-bold">₹{item[priceKey]?.toFixed(2) || 'N/A'}</p>
-                          <p class={`text-[10px] font-mono ${item[changeKey] > 0 ? 'text-error' : item[changeKey] < 0 ? 'text-success' : 'text-mute'}`}>
-                            {item[changeKey] > 0 ? '▲' : item[changeKey] < 0 ? '▼' : ''} {Math.abs(item[changeKey] || 0).toFixed(2)}
-                          </p>
-                        </div>
-                      </a>
-                    );
-                  })}
+              {nearbyPrices && nearbyPrices.length > 0 && (
+                <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm">
+                  <div class="flex items-center gap-2 mb-6"><MapPin class="w-4 h-4 text-mute" /><h2 class="text-sm font-bold uppercase tracking-wider text-mute">Nearby Cities</h2></div>
+                  <div class="space-y-4">
+                    {nearbyPrices.map(item => {
+                      const nbCity = nearbyCitiesList?.find(c => c.id === item.city_id);
+                      if (!nbCity) return null;
+                      return (
+                        <a href={`/${fuel}-price-in-${nbCity.city_slug}`} class="flex justify-between items-center group">
+                          <span class="text-sm font-medium group-hover:text-primary transition-colors">{item.city_name}</span>
+                          <div class="text-right">
+                            <p class="text-sm font-mono font-bold">₹{item[priceKey]?.toFixed(2) || 'N/A'}</p>
+                            <p class={`text-[10px] font-mono ${item[changeKey] > 0 ? 'text-error' : item[changeKey] < 0 ? 'text-success' : 'text-mute'}`}>
+                              {item[changeKey] > 0 ? '▲ +' : item[changeKey] < 0 ? '▼ -' : '— '}{Math.abs(item[changeKey] || 0) === 0 ? 'No Change' : Math.abs(item[changeKey] || 0).toFixed(2)}
+                            </p>
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Calculator CTA */}
               <div class="bg-canvas-soft-2 border border-hairline rounded-xl p-8 text-center">
@@ -683,7 +718,7 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
             </div>
           </div>
           <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-          <script is:inline define:vars={{ priceHistory, priceKey, fuelLabel }}>
+          <script is:inline define:vars={{ priceHistory, priceKey, fuelLabel, unitShort }}>
             const ctx = document.getElementById('priceChart');
             if (ctx && priceHistory && priceHistory.length > 0) {
               const validData = [...priceHistory]
@@ -695,7 +730,7 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
                 data: {
                   labels: validData.map(p => new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })),
                   datasets: [{
-                    label: `${fuelLabel} Price (₹/L)`,
+                    label: `${fuelLabel} Price (₹${unitShort})`,
                     data: validData.map(p => p[priceKey]),
                     borderColor: '#171717',
                     backgroundColor: 'rgba(23, 23, 23, 0.05)',
@@ -727,7 +762,7 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
                       cornerRadius: 8,
                       callbacks: {
                         label: function(context) {
-                          return ` ${fuelLabel} Price: ₹${context.parsed.y.toFixed(2)}`;
+                          return ` ${fuelLabel} Price: ₹${context.parsed.y.toFixed(2)}${unitShort}`;
                         }
                       }
                     }
@@ -847,7 +882,7 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
             </p>
           </header>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
-            <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">State Average</p><p class="text-3xl font-bold text-ink">₹{avgPrice}<span class="text-sm font-normal text-mute ml-1">/L</span></p></div>
+            <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">State Average</p><p class="text-3xl font-bold text-ink">₹{avgPrice}<span class="text-sm font-normal text-mute ml-1">{unitShort}</span></p></div>
             <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm border-l-4 border-l-error"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">Highest Price</p><p class="text-3xl font-bold text-ink">₹{maxPrice?.[priceKey]?.toFixed(2) || 'N/A'}</p><p class="text-xs text-body mt-1">in {maxPrice?.city_name}</p></div>
             <div class="bg-canvas border border-hairline rounded-xl p-6 shadow-sm border-l-4 border-l-success"><p class="text-xs text-mute font-mono uppercase tracking-widest mb-1">Lowest Price</p><p class="text-3xl font-bold text-ink">₹{minPrice?.[priceKey]?.toFixed(2) || 'N/A'}</p><p class="text-xs text-body mt-1">in {minPrice?.city_name}</p></div>
           </div>
@@ -859,7 +894,7 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
             <div class="overflow-x-auto">
               <table class="w-full text-left">
                 <thead class="bg-canvas-soft-2 text-[10px] font-mono uppercase tracking-widest text-mute">
-                  <tr><th class="px-6 py-4">City</th><th class="px-6 py-4 text-right">Price (₹/L)</th><th class="px-6 py-4 text-right">Change</th><th class="px-6 py-4"></th></tr>
+                  <tr><th class="px-6 py-4">City</th><th class="px-6 py-4 text-right">Price (₹{unitShort})</th><th class="px-6 py-4 text-right">Change</th><th class="px-6 py-4"></th></tr>
                 </thead>
                 <tbody class="divide-y divide-hairline">
                   {prices?.map((item) => (
@@ -867,7 +902,7 @@ const embedPrice = type === 'city' && hasPrice && priceNum != null ? priceNum : 
                       <td class="px-6 py-4"><p class="text-sm font-semibold text-ink">{item.city_name}</p></td>
                       <td class="px-6 py-4 text-sm font-mono font-bold text-right">₹{item[priceKey]?.toFixed(2) || 'N/A'}</td>
                       <td class={`px-6 py-4 text-sm font-mono text-right ${item[changeKey] > 0 ? 'text-error' : item[changeKey] < 0 ? 'text-success' : 'text-mute'}`}>
-                        {item[changeKey] > 0 ? '▲' : item[changeKey] < 0 ? '▼' : '—'} {Math.abs(item[changeKey] || 0).toFixed(2)}
+                        {item[changeKey] > 0 ? '▲ +' : item[changeKey] < 0 ? '▼ -' : '— '}{Math.abs(item[changeKey] || 0) === 0 ? 'No Change' : Math.abs(item[changeKey] || 0).toFixed(2)}
                       </td>
                       <td class="px-6 py-4 text-right"><a href={`/${fuel}-price-in-${citiesInState?.find(c => c.id === item.city_id)?.city_slug}`} class="inline-flex items-center gap-1 text-xs font-semibold text-mute group-hover:text-primary transition-colors">View Details <ChevronRight class="w-3 h-3" /></a></td>
                     </tr>
